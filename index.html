@@ -132,6 +132,24 @@ input::placeholder{color:#64748b}
 </style>
 </head>
 <body>
+<!-- 在 LINE、FB、小米瀏覽器等「不能用指紋」的地方打開時，自動跳到 Chrome -->
+<div id="openChrome" style="display:none;position:fixed;left:12px;right:12px;top:12px;z-index:99;padding:14px;border-radius:16px;background:#1e293b;border:1px solid #fbbf24;box-shadow:0 10px 30px rgba(0,0,0,.5);text-align:center;color:#fde68a;font-size:14px">
+  這裡不能使用指紋，請改用 Chrome 開啟
+  <a id="openChromeBtn" class="btn bp" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;text-decoration:none"><i class="ti ti-fingerprint"></i> 用 Chrome 開啟</a>
+</div>
+<script>
+(function(){
+  var ua=navigator.userAgent, android=/Android/i.test(ua);
+  var inApp=/FBAN|FBAV|FB_IAB|Instagram|Line\/|MiuiBrowser|XiaoMi|; wv\)/i.test(ua);
+  if(!android||(!inApp&&window.PublicKeyCredential))return;
+  var url=location.href.replace(/[?&]openExternalBrowser=1/,'').replace(/^https?:\/\//,'');
+  var intent='intent://'+url+'#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(location.href)+';end';
+  document.getElementById('openChromeBtn').href=intent;
+  document.getElementById('openChrome').style.display='block';
+  try{if(!sessionStorage.getItem('triedChrome')){sessionStorage.setItem('triedChrome','1');location.href=intent;}}
+  catch(e){location.href=intent;}
+})();
+</script>
 <div class="card">
   <div class="logo">
     <div class="logo-icon"><i class="ti ti-shield-lock"></i></div>
@@ -771,7 +789,7 @@ async function api(path,body,method){
 // 檢查環境：WebAuthn 只能在 https 或 localhost 上使用
 function fpSupport(){
   if(location.protocol==='file:')return '指紋功能要用網址開啟（例如 GitHub Pages 的 https 網址），不能直接雙擊檔案';
-  if(!window.PublicKeyCredential)return '這個瀏覽器不支援指紋驗證（WebAuthn）';
+  if(!window.PublicKeyCredential)return '這裡不能用指紋（WebAuthn），請用 Chrome 開啟這個網站';
   if(!window.isSecureContext)return '指紋功能需要用 https 或 localhost 網址開啟';
   if(/^\d+\.\d+\.\d+\.\d+$/.test(location.hostname))return '請把網址中的 '+location.hostname+' 改成 localhost 再開啟';
   return null;
