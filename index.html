@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>密碼檢測員</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f172a;--card:#111827;--card2:#1e293b;--line:#334155;--text:#f8fafc;--sub:#94a3b8;--primary:#3b82f6;--primary2:#2563eb;--green:#22c55e;--yellow:#facc15;--red:#ef4444;--shadow:0 20px 50px rgba(0,0,0,.45)}
+body{min-height:100vh;background:radial-gradient(circle at top left,#1e3a8a 0%,transparent 30%),radial-gradient(circle at bottom right,#0f766e 0%,transparent 30%),var(--bg);display:flex;justify-content:center;align-items:center;padding:40px 20px;font-family:'Noto Sans TC',sans-serif;color:var(--text)}
+.card{width:100%;max-width:520px;background:rgba(17,24,39,.92);border:1px solid rgba(255,255,255,.08);border-radius:28px;padding:32px;backdrop-filter:blur(14px);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(59,130,246,.08),transparent,rgba(34,197,94,.08));pointer-events:none}
+.logo{text-align:center;margin-bottom:28px}
+.logo-icon{width:72px;height:72px;margin:0 auto 14px;border-radius:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--primary),#06b6d4);font-size:34px;color:white;box-shadow:0 10px 30px rgba(59,130,246,.45)}
+.logo h1{font-size:32px;font-family:'DM Sans',sans-serif;font-weight:600;letter-spacing:.5px}
+.logo p{color:var(--sub);margin-top:6px;font-size:14px}
+.tabs{display:flex;gap:10px;margin-bottom:24px}
+.tab{flex:1;background:#0f172a;color:var(--sub);padding:12px;border-radius:14px;font-size:14px;cursor:pointer;transition:.25s;border:1px solid transparent;font-family:inherit}
+.tab:hover{color:white;border-color:rgba(255,255,255,.1)}
+.tab.on{background:linear-gradient(135deg,var(--primary),var(--primary2));color:white;font-weight:600;box-shadow:0 8px 20px rgba(59,130,246,.35)}
+.sec{display:none;animation:fade .35s ease}.sec.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.f{margin-bottom:18px}
+.f label{display:block;margin-bottom:8px;font-size:14px;color:#e2e8f0;font-weight:500}
+.iw{position:relative}
+.ic{position:absolute;top:50%;left:14px;transform:translateY(-50%);color:#64748b;font-size:18px}
+input{width:100%;height:52px;border-radius:16px;border:1px solid var(--line);background:#0f172a;color:white;padding:0 48px 0 46px;font-size:15px;transition:.25s;font-family:inherit}
+input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px rgba(59,130,246,.15)}
+input::placeholder{color:#64748b}
+.eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:#94a3b8;cursor:pointer;width:32px;height:32px;border-radius:10px;transition:.2s}
+.eye:hover{background:rgba(255,255,255,.06);color:white}
+.btn{width:100%;border:none;border-radius:16px;height:52px;font-size:15px;font-weight:600;cursor:pointer;transition:.25s;font-family:inherit}
+.bp{background:linear-gradient(135deg,var(--primary),var(--primary2));color:white;box-shadow:0 10px 24px rgba(37,99,235,.35)}
+.bp:hover{transform:translateY(-2px);filter:brightness(1.05)}
+.bp:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.bg{background:#1e293b;color:#cbd5e1;border:1px solid rgba(255,255,255,.08)}
+.bg:hover{background:#334155}
+.dv{text-align:center;color:#64748b;margin:18px 0;font-size:13px;position:relative}
+.dv::before,.dv::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:#334155}
+.dv::before{left:0}.dv::after{right:0}
+.fpl{margin-top:10px;background:none;border:none;color:#60a5fa;cursor:pointer;font-size:13px}
+.fpl:hover{text-decoration:underline}
+#tk{display:none;margin-bottom:18px;padding:14px 16px;border-radius:14px;font-size:14px;font-weight:500}
+#tk.ok{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+#tk.err{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(248,113,113,.2)}
+#tk.info{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(96,165,250,.2)}
+.sw{margin-top:12px;background:#0f172a;border:1px solid #1e293b;border-radius:18px;padding:14px;display:none}
+.sr{display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px}
+.slb.l1{color:#f87171}.slb.l2{color:#facc15}.slb.l3{color:#4ade80}
+.snum{color:#cbd5e1}
+.pt{width:100%;height:10px;border-radius:999px;background:#1e293b;overflow:hidden;margin-bottom:14px}
+.pf{height:100%;width:0;border-radius:999px;transition:.3s}
+.pf.l1{background:#ef4444}.pf.l2{background:#facc15}.pf.l3{background:#22c55e}
+.cks{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.ck{font-size:12px;padding:8px 10px;border-radius:12px;display:flex;align-items:center;gap:6px;background:#111827;border:1px solid #1e293b;color:#94a3b8}
+.ck.ok{color:#4ade80;border-color:rgba(74,222,128,.25);background:rgba(34,197,94,.08)}
+.ck.bad{color:#f87171}
+.sgw{margin-top:14px;display:none}
+.st{margin-bottom:10px;font-size:13px;color:#facc15;font-weight:600}
+.si{font-size:12px;color:#cbd5e1;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.mh{margin-top:10px;font-size:13px;display:none}
+.mh.ok{color:#4ade80}.mh.no{color:#f87171}
+.warn{display:flex;gap:12px;align-items:flex-start;padding:16px;border-radius:18px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.2);color:#fde68a;margin-bottom:20px}
+.warn i{font-size:22px}
+.lockbox{width:88px;height:88px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;background:rgba(239,68,68,.15);color:#f87171;border:2px solid rgba(248,113,113,.3);transition:.3s}
+.lockbox.open{background:rgba(34,197,94,.15);color:#4ade80;border-color:rgba(74,222,128,.3)}
+.klist{display:flex;flex-direction:column;gap:8px}
+.kitem{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:#0f172a;border:1px solid #1e293b}
+.kitem .kn{flex:1;min-width:0}
+.kitem .kn b{display:block;font-size:14px;color:#f1f5f9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kitem .kn span{font-size:12px;color:#94a3b8}
+.kdel{border:none;background:rgba(239,68,68,.12);color:#f87171;width:36px;height:36px;border-radius:10px;cursor:pointer;flex-shrink:0}
+.kempty{font-size:13px;color:#64748b;text-align:center;padding:10px}
+.sgbox{position:relative;height:220px;border-radius:18px;background:#f8fafc;border:2px dashed #475569;overflow:hidden}
+#sgc{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.sgline{position:absolute;left:8%;right:8%;bottom:28%;border-bottom:1px solid #cbd5e1;pointer-events:none}
+.sgres{margin-top:12px;display:none;grid-template-columns:repeat(3,1fr);gap:8px}
+.sgres.on{display:grid}
+.sgm{padding:10px;border-radius:12px;background:#0f172a;border:1px solid #1e293b;text-align:center;font-size:12px;color:#94a3b8}
+.sgm b{display:block;font-size:18px;margin-top:2px}
+.sgm.ok b{color:#4ade80}.sgm.no b{color:#f87171}
+@media(max-width:640px){
+  body{padding:20px 14px}
+  .card{padding:24px 18px;border-radius:22px}
+  .tabs{flex-direction:column}
+  .cks{grid-template-columns:1fr}
+  .logo h1{font-size:28px}
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon"><i class="ti ti-shield-lock"></i></div>
+    <h1>密碼檢測員</h1><p></p>
+  </div>
+  <div class="tabs">
+    <button class="tab on" onclick="go('li')">登入</button>
+    <button class="tab" onclick="go('rg')">建立帳號</button>
+    <button class="tab" onclick="go('fu')">指紋解鎖</button>
+  </div>
+  <div id="tk"></div>
+
+  <div id="li" class="sec on">
+    <div class="f"><label>帳號</label><div class="iw"><i class="ti ti-user ic"></i><input id="lu" type="text" placeholder="帳號或 Email"></div></div>
+    <div class="f">
+      <label>密碼</label>
+      <div class="iw"><i class="ti ti-lock ic"></i><input id="lp" type="password" placeholder="輸入密碼"><button class="eye" onclick="ep('lp',this)"><i class="ti ti-eye"></i></button></div>
+      <button class="fpl" onclick="go('fp')">忘記密碼？</button>
+    </div>
+    <button class="btn bp" onclick="login()">登入</button>
+    <div class="dv">或</div>
+    <button class="btn bg" onclick="go('rg')">還沒有帳號？立即建立 →</button>
+    <button class="btn bg" style="margin-top:10px" onclick="fpLogin()"><i class="ti ti-fingerprint"></i> 指紋登入</button>
+  </div>
+
+  <div id="rg" class="sec">
+    <div class="f"><label>帳號</label><div class="iw"><i class="ti ti-user ic"></i><input id="ru" type="text" placeholder="設定帳號" oninput="chk()"></div></div>
+    <div class="f"><label>Email</label><div class="iw"><i class="ti ti-mail ic"></i><input id="re" type="email" placeholder="your@email.com" oninput="chk()"></div></div>
+    <div class="f">
+      <label>密碼</label>
+      <div class="iw"><i class="ti ti-lock ic"></i><input id="rp" type="password" placeholder="設定密碼" oninput="rs(this,'A')"><button class="eye" onclick="ep('rp',this)"><i class="ti ti-eye"></i></button></div>
+      <button class="fpl" type="button" onclick="fillGen('rp','rp2','A')">生成密碼</button>
+      <div id="swA" class="sw"></div>
+    </div>
+    <div class="f">
+      <label>確認密碼</label>
+      <div class="iw"><i class="ti ti-lock-check ic"></i><input id="rp2" type="password" placeholder="再次輸入" oninput="mp('rp','rp2','mhA');chk()"><button class="eye" onclick="ep('rp2',this)"><i class="ti ti-eye"></i></button></div>
+      <div id="mhA" class="mh"></div>
+    </div>
+    <button class="btn bg" id="fgbtn" style="margin-bottom:12px" onclick="fpBind()"><i class="ti ti-fingerprint"></i> 綁定指紋（選填）</button>
+    <button class="btn bp" id="rb" onclick="reg()" disabled>建立帳號</button>
+    <div class="dv">或</div>
+    <button class="btn bg" onclick="go('li')">← 返回登入</button>
+  </div>
+
+  <div id="fp" class="sec">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="width:48px;height:48px;background:rgba(251,191,36,.15);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:.75rem"><i class="ti ti-mail-forward" style="font-size:24px;color:#fbbf24"></i></div>
+      <div style="font-size:16px;font-weight:600;color:#f1f5f9">忘記密碼</div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:4px">輸入你的 Email，系統將寄送臨時密碼</div>
+    </div>
+    <div class="f"><label>收件 Email</label><div class="iw"><i class="ti ti-mail ic"></i><input id="fe" type="email" placeholder="your@email.com"></div></div>
+    <button class="btn bp" id="fpbtn" onclick="forgotPw()"><i class="ti ti-send" style="font-size:14px;vertical-align:-1px;margin-right:6px"></i>寄送臨時密碼</button>
+    <div class="dv">或</div>
+    <button class="btn bg" onclick="go('li')">← 返回登入</button>
+  </div>
+
+  <div id="rp_sec" class="sec">
+    <div class="warn"><i class="ti ti-alert-triangle"></i><div><b>安全提醒</b><br>你使用臨時密碼登入，請立即設定新密碼。</div></div>
+    <div class="f">
+      <label>新密碼</label>
+      <div class="iw"><i class="ti ti-lock ic"></i><input id="np" type="password" placeholder="設定新密碼" oninput="rs(this,'B')"><button class="eye" onclick="ep('np',this)"><i class="ti ti-eye"></i></button></div>
+      <div id="swB" class="sw"></div>
+    </div>
+    <div class="f">
+      <label>確認新密碼</label>
+      <div class="iw"><i class="ti ti-lock-check ic"></i><input id="np2" type="password" placeholder="再次輸入新密碼" oninput="mp('np','np2','mhB');chkR()"><button class="eye" onclick="ep('np2',this)"><i class="ti ti-eye"></i></button></div>
+      <div id="mhB" class="mh"></div>
+    </div>
+    <button class="btn bp" id="rb2" onclick="doReset()" disabled>確認更新密碼</button>
+  </div>
+
+  <div id="tf" class="sec">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="width:48px;height:48px;background:rgba(59,130,246,.15);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:.75rem"><i class="ti ti-shield-check" style="font-size:24px;color:#60a5fa"></i></div>
+      <div style="font-size:16px;font-weight:600;color:#f1f5f9">雙因子驗證</div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:4px" id="tfHint">驗證碼已寄出</div>
+    </div>
+    <div class="f"><label>6 位數驗證碼</label><div class="iw"><i class="ti ti-key ic"></i><input id="tfc" type="text" inputmode="numeric" maxlength="6" placeholder="000000" style="letter-spacing:6px;font-size:18px"></div></div>
+    <button class="btn bp" onclick="verify2FA()">驗證並登入</button>
+    <button class="fpl" type="button" id="tfResend" onclick="resend2FA()">重新寄送驗證碼</button>
+    <div class="dv">或</div>
+    <button class="btn bg" onclick="cancel2FA()">← 返回登入</button>
+  </div>
+
+  <!-- 指紋解鎖（指紋公鑰存在伺服器） -->
+  <div id="fu" class="sec">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div id="fuIcon" class="lockbox"><i class="ti ti-lock"></i></div>
+      <div id="fuState" style="font-size:20px;font-weight:600;color:#f1f5f9">已上鎖</div>
+      <div id="fuHint" style="font-size:13px;color:#94a3b8;margin-top:6px">連線中…</div>
+    </div>
+    <button class="btn bp" id="fuUnlockBtn" style="display:none" onclick="fuUnlock()"><i class="ti ti-fingerprint"></i> 用指紋解鎖</button>
+    <button class="btn bg" id="fuLockBtn" style="margin-top:10px;display:none" onclick="fuLock()"><i class="ti ti-lock"></i> 重新上鎖</button>
+    <button class="btn bp" id="fuEnrollBtn" style="display:none" onclick="sgStart('enroll',()=>go('fm'),'fu')"><i class="ti ti-signature"></i> 建立本人簽名（第一次使用）</button>
+    <button class="btn bg" id="fuManageBtn" style="margin-top:10px;display:none" onclick="fuManage()"><i class="ti ti-settings"></i> 設定指紋（需本人簽名）</button>
+  </div>
+
+  <!-- 簽名板 -->
+  <div id="sg" class="sec">
+    <div style="text-align:center;margin-bottom:1rem">
+      <div style="width:48px;height:48px;background:rgba(59,130,246,.15);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:.75rem"><i class="ti ti-signature" style="font-size:24px;color:#60a5fa"></i></div>
+      <div id="sgTitle" style="font-size:16px;font-weight:600;color:#f1f5f9">本人簽名驗證</div>
+      <div id="sgHint" style="font-size:12px;color:#94a3b8;margin-top:4px"></div>
+    </div>
+    <div class="sgbox"><canvas id="sgc"></canvas><span class="sgline"></span></div>
+    <div id="sgRes" class="sgres"></div>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button class="btn bg" onclick="sgClear()"><i class="ti ti-eraser"></i> 清除</button>
+      <button class="btn bp" id="sgBtn" onclick="sgSubmit()">確認簽名</button>
+    </div>
+    <button class="fpl" onclick="sgCancel()">← 取消</button>
+  </div>
+
+  <!-- 指紋設定（通過簽名後才能進來） -->
+  <div id="fm" class="sec">
+    <div style="text-align:center;margin-bottom:1.2rem">
+      <div style="font-size:16px;font-weight:600;color:#f1f5f9">指紋設定</div>
+      <div id="fmLeft" style="font-size:12px;color:#4ade80;margin-top:4px"></div>
+    </div>
+    <div id="fmList" class="klist"></div>
+    <div class="f" style="margin-top:16px"><label>新增指紋：裝置名稱</label><div class="iw"><i class="ti ti-device-mobile ic"></i><input id="fmName" type="text" maxlength="30" placeholder="例如：我的手機"></div></div>
+    <button class="btn bp" onclick="fmAdd()"><i class="ti ti-fingerprint"></i> 按指紋新增</button>
+    <button class="btn bg" style="margin-top:10px" onclick="sgStart('enroll',()=>go('fm'),'fm')"><i class="ti ti-signature"></i> 重新設定簽名</button>
+    <div class="dv">或</div>
+    <button class="btn bg" onclick="go('fu')">← 返回指紋解鎖</button>
+  </div>
+</div>
+
+<script>
+emailjs.init({publicKey:'G1iBcJUanJcj7psLS'});
+const SVC='service_22sqf1n',TPL='template_oy8xzck';
+const MY_PUB='7iTsiVO_ykFdehkdr',MY_SVC='service_r85q62a',MY_TPL='template_yfjsq3m';
+const db={}, $=id=>document.getElementById(id), val=id=>$(id).value.trim();
+const score={A:0,B:0}; let curUser=null;
+
+const COM_RAW={
+  numbers:['123456','12345678','123456789','1234567890','12345','1234','123123','654321','111111','000000','1111111','123321','666666','112233','121212','1234567','7777777','1q2w3e4r','1q2w3e','0987654321','987654321','147258369','11111111','88888888','55555555','99999999','12341234','11223344','10203040','13579246','24681357','00000000','12121212','23232323','45454545','11111','22222','33333','44444','55555','66666','77777','88888','99999','10101','31337','8675309','90210','19841','20001','19900101','12312','45678','56789','67890','11122','33344','55566','77788','99900','246810','135790','11235813','31415926','27182818','14142135','16180339','99991231','20231231','22222222','33333333','44444444','66666666','77777777','10000000'],
+  keyboard:['qwerty','qwertyuiop','qwerty123','qazwsx','1q2w3e','zxcvbn','asdfgh','asdfghjkl','zxcvbnm','qwerasdf','poiuytrewq','mnbvcxz','qweasdzxc','1qaz2wsx','!qaz2wsx','qwerty1','qwerty12','asdfghjk','qwertyui','1qazxsw2','2wsxcde3','wsxedc','rfvtgb','yhnujm','nbvcxz','lkjhgf','poiuyt','mnbvcx','zxcvb','rewq','trewq','mnbv','vbnm','asdf','fdsa','hjkl','lkjh','zxcvbnm1','qazwsxedc','qwerty!','asdf1234','zxcv1234','1234qwer','poiuyt123','lkjhgf123','mnbvcx123','qazxsw','wsxzaq','edcrfv','rfvtgb1','tgbyhn','yhnujm1','qweqweqwe','asdasdasd'],
+  common:['password','password1','password2','password3','pass','pass123','letmein','welcome','login','admin','admin123','root','toor','test','guest','user','default','master','changeme','abc123','iloveyou','monkey','dragon','sunshine','princess','football','baseball','shadow','superman','batman','mustang','access','hello','hello123','michael','jessica','charlie','donald','696969','trustno1','starwars','whatever','secret','hunter2','corvette','solo','matrix','buster','camaro','peanut','hammer','silver','falcon','winter','knight','summer','coffee','orange','cookie','butter','flower','rabbit','turtle','wizard','yankee','alpha','bravo','delta','golf','hotel','india','juliet','kilo','lima','oscar','papa','romeo','tango','uniform','victor','whiskey','xray','zulu','abc','abcd','test123','demo','sample','temp','null','root123','admin1234','passwd','pass1','pass12','password12','password123','abc1234','1234abc','asd123','qwe123','pass1234','login123','hello1','hello12','hello1234','world','test1','test12','testtest','adminadmin','rootroot','iloveyou1','iloveyou123','monkey123','dragon123','sunshine1','princess1','football1','baseball1','shadow1','superman1','batman1','welcome1','welcome123','letmein1','letmein123','master1','master123','default1','guest123','user123','username','mypassword','mypass','pwd','secret1','secret123','hunter','hunter123','cheese','chocolate','cookie123','computer','internet','network','server','system','database','windows','linux','ubuntu','android','iphone','google','facebook','twitter','amazon','netflix','youtube','gmail','yahoo','apple','samsung','nintendo','playstation','xbox','pokemon','minecraft','fortnite','discord','telegram','whatsapp','instagram','tiktok','spotify','tesla','bitcoin','ethereum','crypto','hacker'],
+  names:['michael','jessica','daniel','thomas','jordan','hunter','ranger','dakota','morgan','taylor','casey','riley','peyton','avery','quinn','blake','reagan','harley','alexis','ashley','brittany','amanda','melissa','jennifer','stephanie','chelsea','megan','rachel','sarah','emily','madison','hannah','abigail','samantha','elizabeth','natalie','victoria','olivia','sophia','isabella','william','james','john','robert','david','richard','joseph','charles','christopher','andrew','matthew','anthony','donald','mark','paul','steven','george','kenneth','joshua','kevin','brian','edward','ronald','timothy','jason','jeffrey','ryan','jacob','gary','nicholas','eric','jonathan','stephen','larry','justin','scott','brandon','benjamin','samuel','raymond','gregory','frank','alexander','patrick','jack','dennis','tyler','aaron','jose','adam','henry','nathan','douglas','zachary','peter','kyle','noah','ethan','jeremy','christian','walter','keith','austin','roger','terry','sean','carl','harold','dylan','arthur','alex','max','kate','emma','anna','lisa','mary','susan','karen','linda','barbara','betty','dorothy','sandra','donna','carol','ruth','sharon','michelle','laura','chris','mike','dave','steve','tom','bob','jim','sam','joe','nick','dan','ben','jake','josh','ryan1','kevin1','brian1','tony','tony1','jason1','justin1','brandon1','tyler1','aaron1','adam1','evan','evan1','derek','travis','cole','zach','luke','owen','ian','leo','eli','oliver','liam','mason','aiden','lucas','logan','jackson','carter','wyatt','gabriel','julian','mateo'],
+  patterns:['abc123','aaa','aaaa','aaaaaa','qqqqqq','123abc','pass1234','test123','user123','admin1','root123','123qwe','qwe123','1111','2222','3333','0000','9999','abcdef','abcd1234','p@ssword','p@ss123','pa$$word','passw0rd','passwd','P@ssw0rd','Admin123','Welcome1','Letmein1','dragon1','princess1','master1','shadow1','P@ss123','Adm1n','4dm1n','p4ssw0rd','pa55word','s3cur1ty','s3cret','h4cker','t3st','l0gin','w3lcome','r00t','t00r','gu3st','m4ster','Password1!','Password123!','Admin1234!','Welcome123!','abcabcabc','123123123','abcabc','123456abc','abc123456','qweqwe','asdasd','zxczxc','1111aaaa','aaaa1111','abcd','abcde','abcdefg','abcdefgh','aaaabbbb','aabbccdd','iloveyou!','pass!','123!','1234!','admin!','test!','P@$$w0rd','S3cur!ty','Admin@123','Pass@123','Test@123','Hello@123','Welcome@1','pass2023','pass2024','admin2023','admin2024','test2023','test2024','login2024','password2024','abc@123','pass#123','root@123','hello@world','@dmin123','p@ssw0rd1','Pa$$word1','S3cr3t!','W3lc0me!','L3tm3!n','M@ster1','Acc3ss1']
+};
+const COM=[...new Set([...COM_RAW.numbers,...COM_RAW.keyboard,...COM_RAW.common,...COM_RAW.names,...COM_RAW.patterns])];
+const SEQ=/(012|123|234|345|456|567|678|789|890|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|qwe|wer|ert|rty|tyu|yui|uio|iop|asd|sdf|dfg|ghj|hjk|zxc|xcv|cvb|vbn|bnm)/i;
+const CK_LABELS=['長度 ≥ 8','長度 ≥ 12','小寫字母','大寫字母','數字','特殊符號','無重複字元','無連續字串','非常見密碼'];
+const TIPS=['密碼至少需要 8 個字元','建議延長至 12 個字元以上','加入小寫字母（a-z）','加入大寫字母（A-Z）','加入數字（0-9）','加入特殊符號（!@#$%...）','避免連續重複相同字元','避免鍵盤連續字串（如 qwerty）','此為常見密碼，請更換'];
+
+// 動態產生密碼強度面板 DOM（首次呼叫時初始化，避免 HTML 重複）
+function initSW(id){
+  const el=$(id); if(el.dataset.init)return;
+  el.innerHTML=`<div class="sr"><span class="slb" id="sl${id}">請輸入密碼</span><span class="snum" id="sn${id}">0/100 分</span></div><div class="pt"><div class="pf" id="pf${id}"></div></div><div class="cks" id="cks${id}"></div><div class="sgw" id="sg${id}"><div class="st">改善建議</div><div id="sl2${id}"></div></div>`;
+  $('cks'+id).innerHTML=CK_LABELS.map((l,i)=>`<span class="ck" id="ck${id}${i}"><i class="ti ti-circle"></i>${l}</span>`).join('');
+  el.dataset.init=1;
+}
+// 計算密碼強度分數（0–100）與 9 項條件布林陣列
+function calc(v){
+  const r=[v.length>=8,v.length>=12,/[a-z]/.test(v),/[A-Z]/.test(v),/\d/.test(v),/[^A-Za-z0-9]/.test(v),!/(.).*\1{2,}/.test(v),!SEQ.test(v),!COM.includes(v.toLowerCase())];
+  let s=r.reduce((a,ok,i)=>a+([15,15,10,10,10,15,5,5,5][i]*(ok?1:0)),0);
+  if(v.length>=16)s+=10; if(new Set(v).size/v.length>0.7)s+=5;
+  return{s:Math.min(100,s),r};
+}
+// 密碼輸入時即時更新強度面板（k='A' 建立帳號 / 'B' 重設密碼）
+function rs(inp,k){
+  const v=inp.value,sw=$('sw'+k);
+  if(!v){sw.style.display='none';score[k]=0;chk();chkR();return;}
+  initSW('sw'+k); sw.style.display='block';
+  const{s,r}=calc(v); score[k]=s;
+  const lv=s<40?'l1':s<70?'l2':'l3';
+  $('slsw'+k).textContent={l1:'弱 ⚠',l2:'中 ◑',l3:'強 ✓'}[lv];
+  $('slsw'+k).className='slb '+lv;
+  $('snsw'+k).textContent=s+'/100 分';
+  const pf=$('pfsw'+k); pf.style.width=s+'%'; pf.className='pf '+lv;
+  r.forEach((ok,i)=>{const e=$('cksw'+k+i);e.className='ck '+(ok?'ok':'bad');e.querySelector('i').className=ok?'ti ti-check':'ti ti-x';});
+  const sg=[];
+  if(!r[0])sg.push(TIPS[0]);else if(!r[1])sg.push(TIPS[1]);
+  [2,3,4,5,6,7,8].forEach(i=>{if(!r[i])sg.push(TIPS[i]);});
+  $('sgsw'+k).style.display=sg.length?'block':'none';
+  $('sl2sw'+k).innerHTML=sg.map(t=>`<div class="si"><i class="ti ti-bulb"></i>${t}</div>`).join('');
+  chk();chkR();
+}
+// 比對兩次密碼是否一致，顯示相符／不相符提示
+function mp(a,b,m){const p1=$(a).value,p2=$(b).value,el=$(m);if(!p2){el.style.display='none';return;}el.style.display='block';const ok=p1===p2;el.textContent=ok?'✓ 密碼相符':'✗ 密碼不相符';el.className=ok?'mh ok':'mh no';}
+// 切換密碼欄位顯示／隱藏
+function ep(id,b){const e=$(id),s=e.type==='password';e.type=s?'text':'password';b.querySelector('i').className=s?'ti ti-eye-off':'ti ti-eye';}
+// 切換頁籤並隱藏 Toast（指紋解鎖相關頁面會順便向伺服器更新狀態）
+function go(t){
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('on',i===({li:0,rg:1,fu:2,fm:2,sg:2}[t]??-1)));
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));$(t).classList.add('on');$('tk').style.display='none';
+  if(t==='fu')fuLoad();
+  if(t==='fm')fmLoad();
+}
+// 顯示 Toast 通知（ok／err／info），成功訊息 5 秒後自動消失
+function toast(m,t){const e=$('tk');e.textContent=m;e.className=t;e.style.display='block';if(t==='ok')setTimeout(()=>e.style.display='none',5000);}
+// 產生 10 碼隨機臨時密碼（排除易混淆字元）
+function randPw(){const c='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';return Array.from({length:10},()=>c[Math.random()*c.length|0]).join('');}
+// 產生臨時密碼並透過 EmailJS 寄送，登入後強制重設
+async function forgotPw(){
+  const email=val('fe');
+  if(!email.includes('@'))return toast('請輸入有效的 Email','err');
+  const btn=$('fpbtn');
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2" style="font-size:14px;vertical-align:-1px;margin-right:6px"></i>寄送中…';
+  toast('正在寄送臨時密碼…','info');
+  const tmp=randPw();
+  const found=Object.keys(db).find(u=>db[u].e===email);
+  if(found){db[found].p=tmp;db[found].tmp=true;}else{db['__'+email]={e:email,p:tmp,tmp:true};}
+  try{
+    await emailjs.send(SVC,TPL,{to_email:email,user:email,temp_pass:tmp});
+    toast('✓ 臨時密碼已寄至 '+email,'ok');
+    setTimeout(()=>{$('fe').value='';go('li');},3000);
+  }catch(e){toast('❌ 寄送失敗：'+(e.text||e.message||JSON.stringify(e)),'err');}
+  finally{btn.disabled=false;btn.innerHTML='<i class="ti ti-send" style="font-size:14px;vertical-align:-1px;margin-right:6px"></i>寄送臨時密碼';}
+}
+// 驗證帳號密碼；若為臨時密碼則強制跳轉重設頁，否則進入雙因子驗證
+function login(){
+  const u=val('lu'),p=$('lp').value;
+  if(!u||!p)return toast('請填寫帳號與密碼','err');
+  const key=db[u]?u:Object.keys(db).find(k=>db[k].e===u);
+  if(!key||db[key].p!==p)return toast('帳號或密碼錯誤','err');
+  if(db[key].tmp){
+    curUser=key;$('np').value='';$('np2').value='';
+    $('swB').style.display='none';$('mhB').style.display='none';
+    score.B=0;$('rb2').disabled=true;
+    toast('⚠ 請立即設定新密碼','info');go('rp_sec');
+  }else start2FA(key);
+}
+// 確認新密碼填寫完整且強度 ≥ 40 分，才啟用「確認更新」按鈕
+function chkR(){const p1=$('np').value,p2=$('np2').value;$('rb2').disabled=!(p1&&p2&&p1===p2&&score.B>=40);}
+// 將新密碼寫入 db，清除臨時標記，返回登入頁
+function doReset(){
+  if(!curUser)return toast('請重新登入','err');
+  db[curUser].p=$('np').value;db[curUser].tmp=false;
+  toast('✓ 密碼已更新！請重新登入','ok');curUser=null;
+  setTimeout(()=>{$('np').value='';$('np2').value='';$('lp').value='';go('li');},1500);
+}
+// 確認所有欄位填寫且密碼強度 ≥ 40 分，才啟用「建立帳號」按鈕
+function chk(){const p1=$('rp').value,p2=$('rp2').value;$('rb').disabled=!(val('ru')&&val('re')&&p1&&p2&&p1===p2&&score.A>=40);}
+// 驗證表單並將帳號存入 db（含已綁定的指紋金鑰），成功後自動跳回登入頁
+function reg(){
+  const u=val('ru'),e=val('re'),p=$('rp').value;
+  if(!e.includes('@'))return toast('請輸入有效 Email','err');
+  if(db[u])return toast('此帳號已存在','err');
+  if(score.A<40)return toast('密碼強度不足','err');
+  db[u]={e,p,tmp:false,fp:regFp};regFp=null;
+  $('fgbtn').innerHTML='<i class="ti ti-fingerprint"></i> 綁定指紋（選填）';
+  toast('帳號建立成功！','ok');
+  setTimeout(()=>{['ru','re','rp','rp2'].forEach(id=>$(id).value='');$('swA').style.display='none';$('mhA').style.display='none';score.A=0;go('li');$('lu').value=u;},1200);
+}
+
+/* ===== 一鍵產生強密碼（建立帳號的密碼欄位下方按鈕） ===== */
+(function () {
+  function rnd(max) {
+    const limit = Math.floor(0x100000000 / max) * max, b = new Uint32Array(1);
+    do { crypto.getRandomValues(b); } while (b[0] >= limit);
+    return b[0] % max;
+  }
+
+  const SETS = [
+    'ABCDEFGHJKLMNPQRSTUVWXYZ',
+    'abcdefghijkmnpqrstuvwxyz',
+    '23456789',
+    '!@#$%^&*()-_=+[]{}?'
+  ];
+
+  function make(len) {
+    const all = SETS.join('');
+    const out = SETS.map(s => s[rnd(s.length)]);   // 每類至少一個
+    while (out.length < len) out.push(all[rnd(all.length)]);
+    for (let i = out.length - 1; i > 0; i--) {     // 洗牌
+      const j = rnd(i + 1);
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out.join('');
+  }
+
+  window.fillGen = function (pid, cid, s) {
+    // 直接用上面 calc() 的 9 項檢查，不全部通過就重產，確保強度面板全綠
+    let p, n = 0;
+    do { p = make(16); } while (!calc(p).r.every(Boolean) && ++n < 500);
+    const a = $(pid), b = $(cid);
+    a.type = 'text'; b.type = 'text';              // 顯示出來讓使用者看得到
+    a.value = p; b.value = p;
+    rs(a, s);                                      // 更新強度面板
+    mp(pid, cid, 'mh' + s);                        // 更新「密碼相符」提示
+    chk();                                         // 更新「建立帳號」按鈕狀態
+    if (navigator.clipboard) navigator.clipboard.writeText(p).catch(() => {});
+  };
+})();
+
+/* ===== 雙因子驗證（Email 驗證碼） ===== */
+let tf=null; // {key, code, exp, tries}
+
+// 產生 6 位數安全隨機驗證碼
+function rnd6(){
+  const b=new Uint32Array(1),limit=Math.floor(0x100000000/900000)*900000;
+  do{crypto.getRandomValues(b);}while(b[0]>=limit);
+  return String(100000+b[0]%900000);
+}
+// 隱藏部分 Email，例如 a***@gmail.com
+function maskEmail(e){return e.replace(/^(.).*(@.*)$/,'$1***$2');}
+
+// 產生驗證碼並寄出（用自己的 EmailJS 帳號與範本）
+async function send2FACode(){
+  tf.code=rnd6(); tf.exp=Date.now()+5*60*1000; tf.tries=0;
+  await emailjs.send(MY_SVC,MY_TPL,{to_email:db[tf.key].e,user:tf.key,code:tf.code},{publicKey:MY_PUB});
+}
+// 密碼正確後呼叫：寄驗證碼並切到驗證頁
+async function start2FA(key){
+  tf={key};
+  toast('正在寄送驗證碼…','info');
+  try{
+    await send2FACode();
+    $('tfc').value='';
+    $('tfHint').textContent='驗證碼已寄至 '+maskEmail(db[key].e)+'（5 分鐘內有效）';
+    go('tf');
+    toast('✓ 驗證碼已寄出','ok');
+  }catch(e){tf=null;toast('❌ 寄送失敗：'+(e.text||e.message||JSON.stringify(e)),'err');}
+}
+// 檢查驗證碼：過期、錯誤次數、是否相符
+function verify2FA(){
+  if(!tf)return toast('請重新登入','err');
+  if(Date.now()>tf.exp)return toast('驗證碼已過期，請重新寄送','err');
+  if(++tf.tries>5){tf=null;go('li');return toast('錯誤次數過多，請重新登入','err');}
+  if(val('tfc')!==tf.code)return toast('驗證碼錯誤（還剩 '+(5-tf.tries)+' 次）','err');
+  const k=tf.key;tf=null;
+  $('lp').value='';
+  go('li');
+  toast('登入成功！歡迎 '+k+'（雙因子驗證通過）','ok');
+}
+// 重新寄送（30 秒內不能再按）
+async function resend2FA(){
+  if(!tf)return;
+  const b=$('tfResend');b.disabled=true;
+  try{await send2FACode();toast('✓ 已重新寄出驗證碼','ok');}
+  catch(e){toast('❌ 寄送失敗：'+(e.text||e.message||''),'err');}
+  setTimeout(()=>b.disabled=false,30000);
+}
+function cancel2FA(){tf=null;go('li');}
+
+/* ===== 指紋共用工具 ===== */
+let regFp=null; // 帳號頁綁定後暫存 {id, pk, alg}，建立帳號時寫入 db
+
+// ArrayBuffer ⇄ Base64
+const b64=buf=>btoa(String.fromCharCode(...new Uint8Array(buf)));
+const b64url=buf=>b64(buf).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const fromB64u=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return Uint8Array.from(atob(s),c=>c.charCodeAt(0));};
+const rand32=()=>crypto.getRandomValues(new Uint8Array(32));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ===================================================================
+   本機版後端：原本 app.py 做的事，全部改在瀏覽器裡完成（可直接放 GitHub Pages）
+   - 簽名範本：只存特徵值，用 AES-GCM（加密 + 防竄改）加密後存進 localStorage
+     加密金鑰存在 IndexedDB，而且設成「不可匯出」，JavaScript 也讀不出金鑰本身
+   - 指紋：指紋留在手機的 TEE 裡，這裡只存公鑰
+   =================================================================== */
+const SIG={ENROLL:3,VALID:300,MAX_FAIL:5,LOCK:300,SCALE:2,
+  FLOOR:{shape:.06,order:.08,stroke:.30},CONSIST:{shape:.25,order:.30,stroke:1.20},
+  PTS:128,COUNT_TOL:.25};
+const SIG_NAMES={shape:'字的形狀',order:'筆順',stroke:'筆畫'};
+const S={sigOk:0,unlocked:false,fpReg:null,fpAuth:null};   // 等同原本的 session（重新整理就清空）
+const LS={
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}},
+  del(k){try{localStorage.removeItem(k);}catch(e){}}
+};
+const nowSec=()=>Date.now()/1000;
+const nowStr=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;};
+const bytesB64u=u8=>{let s='';for(let i=0;i<u8.length;i++)s+=String.fromCharCode(u8[i]);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
+const sigOk=()=>S.sigOk&&nowSec()-S.sigOk<SIG.VALID;
+const getFail=()=>LS.get('pc_fail',{count:0,until:0});
+const setFail=(count,until)=>LS.set('pc_fail',{count,until});
+
+// ----- AES-GCM 金鑰（第一次使用自動產生，存在 IndexedDB）-----
+let keyP=null;
+function getKey(){
+  if(!keyP)keyP=(async()=>{
+    const d=await new Promise((res,rej)=>{const r=indexedDB.open('pwchecker',1);r.onupgradeneeded=()=>r.result.createObjectStore('keys');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});
+    let k=await new Promise((res,rej)=>{const r=d.transaction('keys').objectStore('keys').get('aes');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});
+    if(!k){
+      k=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+      await new Promise((res,rej)=>{const t=d.transaction('keys','readwrite');t.objectStore('keys').put(k,'aes');t.oncomplete=res;t.onerror=()=>rej(t.error);});
+    }
+    return k;
+  })().catch(e=>{keyP=null;throw e;});
+  return keyP;
+}
+async function saveTpl(t){   // 加密後才存
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},await getKey(),new TextEncoder().encode(JSON.stringify(t)));
+  LS.set('pc_sig',bytesB64u(iv)+'.'+bytesB64u(new Uint8Array(ct)));
+}
+async function loadTpl(){    // 讀出時才解密
+  const s=LS.get('pc_sig',null); if(!s)return null;
+  try{
+    const [iv,ct]=s.split('.');
+    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64u(iv)},await getKey(),fromB64u(ct));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }catch(e){LS.del('pc_sig');return null;}   // 被竄改或金鑰遺失 → 範本作廢，需重新建立
+}
+
+// ----- 簽名辨識：字的形狀、筆順、筆畫 -----
+const dist=(a,b)=>{let s=0;for(let i=0;i<a.length;i++)s+=(a[i]-b[i])**2;return Math.sqrt(s);};
+const dist2=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+function sigClean(sample){   // 檢查簽名資料：[[ [x,y,t,壓力], ... ], ...]，每個內層陣列是一筆
+  if(!Array.isArray(sample)||sample.length<1||sample.length>150)throw new Error('簽名資料格式錯誤');
+  const out=[];let total=0;
+  for(const s of sample){
+    if(!Array.isArray(s)||!s.length)continue;
+    const pts=s.map(p=>{if(!Array.isArray(p)||p.length<3)throw new Error('簽名資料格式錯誤');return [+p[0],+p[1],+p[2]];});
+    total+=pts.length;out.push(pts);
+  }
+  if(!out.length||total<15||total>15000)throw new Error('簽名太短或太長，請重簽');
+  return out;
+}
+function strokeLen(s){let L=0;for(let i=0;i<s.length-1;i++)L+=dist2(s[i],s[i+1]);return L;}
+function resample(pts,k){    // 把一筆重新取樣成 k 個等距的點
+  if(pts.length===1)return Array(k).fill(pts[0]);
+  const d=[0];for(let i=1;i<pts.length;i++)d.push(d[i-1]+dist2(pts[i-1],pts[i]));
+  const L=d[d.length-1]; if(L===0)return Array(k).fill(pts[0]);
+  const out=[];let j=0;
+  for(let i=0;i<k;i++){
+    const tgt=L*i/(k-1);
+    while(j<pts.length-2&&d[j+1]<tgt)j++;
+    const seg=d[j+1]-d[j], r=seg===0?0:Math.min(1,(tgt-d[j])/seg);
+    out.push(pts[j].map((a,n)=>a+(pts[j+1][n]-a)*r));
+  }
+  return out;
+}
+function sigFeatures(strokes){   // 位置和大小正規化後，簽大簽小、簽在哪裡都不影響比對
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  for(const s of strokes)for(const p of s){x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1]);}
+  const size=Math.max(x1-x0,y1-y0,1e-6), cxm=(x1+x0)/2, cym=(y1+y0)/2;
+  const t0=strokes[0][0][2], last=strokes[strokes.length-1];
+  const T=Math.max(last[last.length-1][2]-t0,1);
+  const norm=strokes.map(s=>s.map(([x,y,t])=>[(x-cxm)/size,(y-cym)/size,(t-t0)/T]));
+  const lens=norm.map(strokeLen), L=lens.reduce((a,b)=>a+b,0);
+  let path=[];
+  norm.forEach((s,i)=>{const k=Math.max(3,Math.round(SIG.PTS*(L>0?lens[i]/L:1/norm.length)));path=path.concat(resample(s,k));});
+  return{
+    n:norm.length,                                   // 筆畫數
+    T,                                               // 總書寫時間（毫秒）
+    path:path.map(p=>[p[0],p[1]]),                   // 字的形狀
+    starts:norm.map(s=>[s[0][0],s[0][1]]),           // 每一筆的起點
+    ends:norm.map(s=>[s[s.length-1][0],s[s.length-1][1]]),   // 每一筆的終點
+    durs:norm.map(s=>s[s.length-1][2]-s[0][2])       // 每一筆佔總時間的比例
+  };
+}
+function dtw(a,b){   // DTW 動態時間校正：長短、快慢不同的序列也能對齊比較（越小越像）
+  const n=a.length,m=b.length;
+  let prev=new Float64Array(m+1).fill(Infinity);prev[0]=0;
+  for(let i=1;i<=n;i++){
+    const cur=new Float64Array(m+1).fill(Infinity),ai=a[i-1];
+    for(let j=1;j<=m;j++)cur[j]=dist(ai,b[j-1])+Math.min(prev[j],cur[j-1],prev[j-1]);
+    prev=cur;
+  }
+  return prev[m]/(n+m);
+}
+function sigCompare(a,b){
+  const shape=dtw(a.path,b.path);
+  const sa=a.starts.map((s,i)=>[...s,...a.ends[i]]), sb=b.starts.map((s,i)=>[...s,...b.ends[i]]);
+  const order=dtw(sa,sb);
+  const stroke=4*dtw(a.durs.map(d=>[d]),b.durs.map(d=>[d]))+0.5*Math.abs(Math.log(a.T/b.T));
+  return{shape,order,stroke};
+}
+const countTol=n=>Math.max(2,Math.round(n*SIG.COUNT_TOL));
+
+async function sigEnroll(b){
+  if(await loadTpl()&&!sigOk())throw new Error('要重新設定簽名，請先通過本人簽名驗證');
+  const samples=b.samples;
+  if(!Array.isArray(samples)||samples.length!==SIG.ENROLL)throw new Error('需要簽名 '+SIG.ENROLL+' 次');
+  const feats=samples.map(s=>sigFeatures(sigClean(s)));
+  const counts=feats.map(f=>f.n), lo=Math.min(...counts), hi=Math.max(...counts);
+  if(hi-lo>countTol(hi))throw new Error('三次簽名的筆畫數差太多（'+counts.join('、')+' 筆），請用同樣的寫法重簽');
+  const pairs=[];
+  for(let i=0;i<feats.length;i++)for(let j=i+1;j<feats.length;j++)pairs.push(sigCompare(feats[i],feats[j]));
+  for(const k in SIG.CONSIST)if(Math.max(...pairs.map(p=>p[k]))>SIG.CONSIST[k])throw new Error('三次簽名的「'+SIG_NAMES[k]+'」差太多，請用平常的寫法重簽');
+  const thr={};   // 門檻依照「本人自己每次簽名的差異」自動計算
+  for(const k in SIG.FLOOR)thr[k]=Math.max(Math.max(...pairs.map(p=>p[k]))*SIG.SCALE,SIG.FLOOR[k]);
+  await saveTpl({feats,thr,counts:[lo,hi],created:nowStr()});
+  setFail(0,0); S.sigOk=nowSec();
+  return{ok:true};
+}
+async function sigVerify(b){
+  const tpl=await loadTpl(); if(!tpl)throw new Error('尚未建立簽名範本');
+  const F=getFail();
+  if(nowSec()<F.until)throw new Error('失敗太多次，請 '+Math.ceil(F.until-nowSec())+' 秒後再試');
+  const f=sigFeatures(sigClean(b.sample));
+  const thr=tpl.thr,[lo,hi]=tpl.counts,tol=countTol(hi);
+  const score=d=>Object.keys(thr).reduce((a,k)=>a+d[k]/thr[k],0);
+  const best=tpl.feats.map(t=>sigCompare(f,t)).reduce((a,d)=>score(d)<score(a)?d:a);
+  const sim={};for(const k in thr)sim[k]=Math.round(Math.max(0,Math.min(100,100*(1-best[k]/(2*thr[k])))));
+  let reason=null;
+  if(f.n<lo-tol||f.n>hi+tol)reason='筆畫數差太多（你寫了 '+f.n+' 筆，範本約 '+lo+'～'+hi+' 筆）';
+  else if(best.shape<1e-4&&best.order<1e-4)reason='與範本完全相同，疑似複製的資料';
+  else{const bad=Object.keys(thr).filter(k=>best[k]>thr[k]).map(k=>SIG_NAMES[k]);if(bad.length)reason=bad.join('、')+' 不符';}
+  const ok=reason===null;
+  if(ok){setFail(0,0);S.sigOk=nowSec();}
+  else{
+    const cnt=F.count+1,left=SIG.MAX_FAIL-cnt;
+    if(left<=0){setFail(0,nowSec()+SIG.LOCK);reason+='。失敗太多次，鎖定 '+(SIG.LOCK/60)+' 分鐘';}
+    else{setFail(cnt,0);reason+='（還剩 '+left+' 次機會）';}
+  }
+  return{ok,reason,sim};
+}
+
+// ----- 指紋（WebAuthn）：出題目、驗證簽章 -----
+const rpId=()=>location.hostname;
+const getCreds=()=>LS.get('pc_creds',[]);
+const setCreds=c=>LS.set('pc_creds',c);
+function checkClient(d,typ,key){   // 檢查 clientDataJSON：類型、題目、來源網址
+  const st=S[key]; S[key]=null;
+  if(!st||nowSec()>st.exp)throw new Error('驗證逾時，請重新操作');
+  const raw=fromB64u(d.clientDataJSON);
+  const cd=JSON.parse(new TextDecoder().decode(raw));
+  if(cd.type!==typ)throw new Error('驗證類型不符');
+  if(cd.challenge!==st.c)throw new Error('題目（challenge）不符，可能是重送攻擊');
+  if(cd.origin!==location.origin)throw new Error('來源網址不符：'+cd.origin);
+  return raw;
+}
+async function checkAuthData(ad){   // 檢查 authenticatorData：網站識別碼、使用者在場、指紋已驗證
+  if(ad.length<37)throw new Error('authenticatorData 格式錯誤');
+  const h=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(rpId())));
+  if(h.some((v,i)=>v!==ad[i]))throw new Error('網站識別碼（rpId）不符');
+  if(!(ad[32]&0x01))throw new Error('使用者沒有實際操作（UP 旗標）');
+  if(!(ad[32]&0x04))throw new Error('裝置沒有驗證指紋（UV 旗標）');
+  return new DataView(ad.buffer,ad.byteOffset+33,4).getUint32(0);   // 簽章計數器
+}
+async function importPub(pk,alg){
+  if(alg===-7)return crypto.subtle.importKey('spki',pk,{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
+  if(alg===-257)return crypto.subtle.importKey('spki',pk,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
+  throw new Error('不支援的金鑰類型');
+}
+async function regOptions(){
+  if(!sigOk())throw new Error('請先通過本人簽名驗證');
+  const c=bytesB64u(rand32()); S.fpReg={c,exp:nowSec()+120};
+  return{challenge:c,rpId:rpId(),userId:bytesB64u(crypto.getRandomValues(new Uint8Array(16))),exclude:getCreds().map(r=>r.id)};
+}
+async function regVerify(d){
+  if(!sigOk())throw new Error('簽名驗證已過期，請重新簽名');
+  checkClient(d,'webauthn.create','fpReg');
+  const cnt=await checkAuthData(fromB64u(d.authenticatorData));
+  const alg=+d.alg;
+  try{await importPub(fromB64u(d.publicKey),alg);}catch(e){throw new Error('不支援的金鑰類型');}
+  const name=(String(d.name||'').trim()||'未命名裝置').slice(0,30);
+  setCreds(getCreds().filter(r=>r.id!==d.id).concat({id:d.id,name,public_key:d.publicKey,alg,sign_count:cnt,created:nowStr(),last_used:null}));
+  return{ok:true,name};
+}
+async function loginOptions(){
+  const ids=getCreds().map(r=>r.id);
+  if(!ids.length)throw new Error('還沒有設定指紋');
+  const c=bytesB64u(rand32()); S.fpAuth={c,exp:nowSec()+120};
+  return{challenge:c,rpId:rpId(),allow:ids};
+}
+async function loginVerify(d){
+  const raw=checkClient(d,'webauthn.get','fpAuth');
+  const creds=getCreds(), row=creds.find(r=>r.id===d.id);
+  if(!row)throw new Error('找不到這把指紋金鑰（可能已被刪除）');
+  const ad=fromB64u(d.authenticatorData);
+  const cnt=await checkAuthData(ad);
+  const key=await importPub(fromB64u(row.public_key),row.alg);
+  const hash=new Uint8Array(await crypto.subtle.digest('SHA-256',raw));
+  const data=new Uint8Array(ad.length+hash.length); data.set(ad); data.set(hash,ad.length);   // 簽章內容
+  const sig=fromB64u(d.signature);
+  const good=row.alg===-7
+    ?await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},key,derToRaw(sig),data)
+    :await crypto.subtle.verify('RSASSA-PKCS1-v1_5',key,sig,data);
+  if(!good)throw new Error('簽章驗證失敗');
+  if((cnt||row.sign_count)&&cnt<=row.sign_count)throw new Error('簽章計數異常，可能是被複製的金鑰');
+  row.sign_count=cnt; row.last_used=nowStr(); setCreds(creds);
+  S.unlocked=true;
+  return{ok:true,name:row.name};
+}
+async function apiStatus(){
+  const ok=sigOk();
+  return{
+    sig_enrolled:!!(await loadTpl()),
+    sig_ok:!!ok,
+    sig_left:ok?Math.floor(SIG.VALID-(nowSec()-S.sigOk)):0,
+    unlocked:S.unlocked,
+    creds:getCreds().map(({id,name,created,last_used})=>({id,name,created,last_used}))
+  };
+}
+const ROUTES={
+  'POST /api/sig/enroll':sigEnroll,
+  'POST /api/sig/verify':sigVerify,
+  'POST /api/fp/register/options':regOptions,
+  'POST /api/fp/register/verify':regVerify,
+  'POST /api/fp/login/options':loginOptions,
+  'POST /api/fp/login/verify':loginVerify,
+  'POST /api/lock':async()=>{S.unlocked=false;S.sigOk=0;return{ok:true};},
+  'GET /api/status':apiStatus
+};
+// 介面跟原本呼叫伺服器時一樣，只是改成在本機執行
+async function api(path,body,method){
+  method=method||'POST';
+  if(method==='DELETE'&&path.startsWith('/api/fp/')){
+    if(!sigOk())throw new Error('請先通過本人簽名驗證');
+    const id=decodeURIComponent(path.slice(8));
+    setCreds(getCreds().filter(r=>r.id!==id));
+    return{ok:true};
+  }
+  const fn=ROUTES[method+' '+path];
+  if(!fn)throw new Error('找不到功能：'+path);
+  return fn(body||{});
+}
+
+// 檢查環境：WebAuthn 只能在 https 或 localhost 上使用
+function fpSupport(){
+  if(location.protocol==='file:')return '指紋功能要用網址開啟（例如 GitHub Pages 的 https 網址），不能直接雙擊檔案';
+  if(!window.PublicKeyCredential)return '這個瀏覽器不支援指紋驗證（WebAuthn）';
+  if(!window.isSecureContext)return '指紋功能需要用 https 或 localhost 網址開啟';
+  if(/^\d+\.\d+\.\d+\.\d+$/.test(location.hostname))return '請把網址中的 '+location.hostname+' 改成 localhost 再開啟';
+  return null;
+}
+// 把錯誤轉成看得懂的中文
+function fpErr(e){
+  if(e.name==='NotAllowedError')return '已取消，或指紋驗證逾時';
+  if(e.name==='InvalidStateError')return '這台裝置已經綁定過指紋了';
+  if(e.name==='SecurityError')return '網址不安全，請用 https 或 localhost 開啟';
+  if(e.name==='NotSupportedError')return '這台裝置不支援這種指紋驗證';
+  return '❌ '+(e.message||e.name);
+}
+
+/* ===== 帳號頁的指紋登入（存在網頁裡，和之前一樣） ===== */
+async function fpBind(){
+  const err=fpSupport(); if(err)return toast(err,'err');
+  const u=val('ru'); if(!u)return toast('請先填寫帳號，再綁定指紋','err');
+  if(db[u])return toast('此帳號已存在','err');
+  if(!await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())
+    return toast('這台裝置沒有可用的指紋，請先到系統設定新增指紋','err');
+  try{
+    toast('請按壓指紋…','info');
+    const cred=await navigator.credentials.create({publicKey:{
+      challenge:rand32(),
+      rp:{name:'密碼檢測員'},
+      user:{id:new TextEncoder().encode(u).slice(0,64),name:u,displayName:u},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},
+      attestation:'none',
+      timeout:60000
+    }});
+    const r=cred.response;
+    regFp={
+      id:b64(cred.rawId),
+      pk:r.getPublicKey&&r.getPublicKey()?b64(r.getPublicKey()):null,
+      alg:r.getPublicKeyAlgorithm?r.getPublicKeyAlgorithm():-7
+    };
+    $('fgbtn').innerHTML='<i class="ti ti-check"></i> 已綁定指紋';
+    toast('✓ 指紋已綁定，建立帳號後生效','ok');
+  }catch(e){toast(fpErr(e),'err');}
+}
+
+async function fpLogin(){
+  const err=fpSupport(); if(err)return toast(err,'err');
+  const u=val('lu');
+  const users=Object.entries(db).filter(([k,o])=>o.fp&&(!u||k===u||o.e===u));
+  if(!users.length)return toast(u?'這個帳號沒有綁定指紋':'尚無已綁定指紋的帳號，請先建立帳號並綁定指紋（重新整理頁面會清空資料）','err');
+  const challenge=rand32();
+  try{
+    toast('請按壓指紋…','info');
+    const a=await navigator.credentials.get({publicKey:{
+      challenge,
+      allowCredentials:users.map(([,o])=>({type:'public-key',id:unb64(o.fp.id),transports:['internal']})),
+      userVerification:'required',
+      timeout:60000
+    }});
+    const hit=users.find(([,o])=>o.fp.id===b64(a.rawId));
+    if(!hit)return toast('找不到對應的帳號','err');
+    const [key,o]=hit;
+    const cd=JSON.parse(new TextDecoder().decode(a.response.clientDataJSON));
+    if(cd.type!=='webauthn.get'||cd.challenge!==b64url(challenge)||cd.origin!==location.origin)
+      return toast('驗證失敗：題目或來源不符','err');
+    const ad=new Uint8Array(a.response.authenticatorData);
+    if(!(ad[32]&0x04))return toast('驗證失敗：裝置沒有確認使用者身分','err');
+    if(o.fp.pk&&!await fpVerify(o.fp,ad,a.response.clientDataJSON,a.response.signature))
+      return toast('驗證失敗：簽章不正確','err');
+    $('lp').value='';
+    toast('登入成功！歡迎 '+key+'（指紋驗證通過'+(o.fp.pk?'，簽章已驗證':'')+'）','ok');
+  }catch(e){toast(fpErr(e),'err');}
+}
+
+// 驗證簽名：簽名內容 = authenticatorData + SHA-256(clientDataJSON)
+async function fpVerify(fp,ad,cdj,sig){
+  const hash=new Uint8Array(await crypto.subtle.digest('SHA-256',cdj));
+  const data=new Uint8Array(ad.length+hash.length); data.set(ad); data.set(hash,ad.length);
+  const spki=unb64(fp.pk);
+  if(fp.alg===-257){
+    const k=await crypto.subtle.importKey('spki',spki,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
+    return crypto.subtle.verify('RSASSA-PKCS1-v1_5',k,sig,data);
+  }
+  const k=await crypto.subtle.importKey('spki',spki,{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
+  return crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},k,derToRaw(new Uint8Array(sig)),data);
+}
+// ECDSA 簽名格式轉換：DER → 64 位元組的 r||s
+function derToRaw(d){
+  const out=new Uint8Array(64); let i=2;
+  for(let n=0;n<2;n++){
+    const len=d[i+1]; let v=d.slice(i+2,i+2+len);
+    while(v.length>32&&v[0]===0)v=v.slice(1);
+    out.set(v,32*n+32-v.length); i+=2+len;
+  }
+  return out;
+}
+
+/* ===================================================================
+   指紋解鎖（指紋公鑰存在伺服器，設定指紋前要先通過本人簽名）
+   =================================================================== */
+let fuS=null; // 伺服器回傳的狀態
+
+async function fuLoad(){
+  try{fuS=await api('/api/status',null,'GET');}catch(e){fuS=null;}
+  fuRefresh();
+}
+function fuRefresh(){
+  const ok=!!fuS, has=ok&&fuS.creds.length>0, open=ok&&fuS.unlocked;
+  $('fuIcon').className='lockbox'+(open?' open':'');
+  $('fuIcon').innerHTML='<i class="ti '+(open?'ti-lock-open':'ti-lock')+'"></i>';
+  $('fuState').textContent=open?'已解鎖':'已上鎖';
+  $('fuHint').textContent=!ok?'載入失敗，請重新整理頁面'
+    :!fuS.sig_enrolled?'第一次使用：請先建立本人簽名範本'
+    :!has?'還沒有設定指紋，請按「設定指紋」新增（需本人簽名）'
+    :open?'按「重新上鎖」可以再鎖起來':'按下按鈕，用你的指紋解鎖';
+  $('fuUnlockBtn').style.display=has&&!open?'block':'none';
+  $('fuLockBtn').style.display=open?'block':'none';
+  $('fuEnrollBtn').style.display=ok&&!fuS.sig_enrolled?'block':'none';
+  $('fuManageBtn').style.display=ok&&fuS.sig_enrolled?'block':'none';
+}
+// 要進入指紋設定：簽名驗證還有效就直接進去，否則先簽名
+function fuManage(){
+  if(fuS&&fuS.sig_ok)go('fm');
+  else sgStart('verify',()=>go('fm'),'fu');
+}
+// 指紋解鎖：伺服器出題目 → 手機按指紋簽名 → 伺服器驗證簽章
+async function fuUnlock(){
+  const err=fpSupport(); if(err)return toast(err,'err');
+  try{
+    const o=await api('/api/fp/login/options');
+    toast('請按壓指紋…','info');
+    const a=await navigator.credentials.get({publicKey:{
+      challenge:fromB64u(o.challenge),
+      rpId:o.rpId,
+      allowCredentials:o.allow.map(id=>({type:'public-key',id:fromB64u(id),transports:['internal']})),
+      userVerification:'required',
+      timeout:60000
+    }});
+    const r=a.response;
+    const j=await api('/api/fp/login/verify',{
+      id:b64url(a.rawId),
+      clientDataJSON:b64url(r.clientDataJSON),
+      authenticatorData:b64url(r.authenticatorData),
+      signature:b64url(r.signature)
+    });
+    await fuLoad();
+    toast('🔓 解鎖成功！（已驗證「'+j.name+'」的指紋簽章）','ok');
+  }catch(e){toast(fpErr(e),'err');}
+}
+async function fuLock(){
+  try{await api('/api/lock');}catch(e){}
+  await fuLoad();
+  toast('🔒 已重新上鎖','info');
+}
+
+/* ===== 指紋設定頁 ===== */
+async function fmLoad(){
+  try{fuS=await api('/api/status',null,'GET');}catch(e){fuS=null;}
+  if(!fuS||!fuS.sig_ok){go('fu');return toast('簽名驗證已過期，請重新簽名','err');}
+  $('fmLeft').textContent='✓ 已通過本人簽名驗證（剩 '+Math.ceil(fuS.sig_left/60)+' 分鐘有效）';
+  $('fmList').innerHTML=!fuS.creds.length?'<div class="kempty">還沒有設定指紋</div>':fuS.creds.map(k=>
+    `<div class="kitem"><i class="ti ti-fingerprint" style="font-size:22px;color:#60a5fa"></i>
+     <div class="kn"><b>${esc(k.name)}</b><span>新增：${esc(k.created)}　上次使用：${esc(k.last_used||'尚未使用')}</span></div>
+     <button class="kdel" title="刪除" onclick="fmDel('${k.id}')"><i class="ti ti-trash"></i></button></div>`).join('');
+    }
+    
+// 新增指紋：伺服器確認簽名通過才給題目，手機產生金鑰對，公鑰交給伺服器存
+async function fmAdd(){
+  const err=fpSupport(); if(err)return toast(err,'err');
+  if(!await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())
+    return toast('這台裝置沒有可用的指紋，請先到系統設定新增指紋','err');
+  try{
+    const o=await api('/api/fp/register/options');
+    toast('請按壓指紋…','info');
+    const cred=await navigator.credentials.create({publicKey:{
+      challenge:fromB64u(o.challenge),
+      rp:{id:o.rpId,name:'密碼檢測員'},
+      user:{id:fromB64u(o.userId),name:'指紋解鎖',displayName:'指紋解鎖'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},
+      excludeCredentials:o.exclude.map(id=>({type:'public-key',id:fromB64u(id),transports:['internal']})),
+      attestation:'none',
+      timeout:60000
+    }});
+    const r=cred.response;
+    if(!r.getPublicKey||!r.getAuthenticatorData||!r.getPublicKey())throw new Error('瀏覽器版本太舊，請更新 Chrome 後再試');
+    const j=await api('/api/fp/register/verify',{
+      name:val('fmName'),
+      id:b64url(cred.rawId),
+      clientDataJSON:b64url(r.clientDataJSON),
+      authenticatorData:b64url(r.getAuthenticatorData()),
+      publicKey:b64url(r.getPublicKey()),
+      alg:r.getPublicKeyAlgorithm()
+    });
+    $('fmName').value='';
+    await fmLoad();
+    toast('✓「'+j.name+'」的指紋公鑰已儲存','ok');
+  }catch(e){toast(fpErr(e),'err');}
+}
+async function fmDel(id){
+  try{await api('/api/fp/'+id,null,'DELETE');await fmLoad();toast('已刪除這把指紋金鑰','info');}
+  catch(e){toast(fpErr(e),'err');}
+}
+
+/* ===================================================================
+   簽名板：記錄每一筆的座標 (x, y)、時間 t、壓力 p，交給伺服器比對
+   =================================================================== */
+const cv=$('sgc'), cx=cv.getContext('2d');
+let sgMode=null, sgSamples=[], sgStrokes=[], sgCur=null, sgT0=0, sgDone=null, sgBack='fu';
+
+function sgFit(){
+  const r=cv.getBoundingClientRect(), d=window.devicePixelRatio||1;
+  cv.width=Math.round(r.width*d); cv.height=Math.round(r.height*d);
+  cx.setTransform(d,0,0,d,0,0);
+  cx.lineCap='round'; cx.lineJoin='round'; cx.lineWidth=3; cx.strokeStyle='#0f172a';
+}
+function sgClear(){sgStrokes=[];sgCur=null;sgFit();}
+function sgHint(){
+  const n=sgSamples.length+1;
+  $('sgTitle').textContent=sgMode==='enroll'?'建立本人簽名範本':'本人簽名驗證';
+  $('sgHint').textContent=sgMode==='enroll'
+    ?'請用平常的寫法簽名，共 3 次（第 '+n+' / 3 次）。系統會記錄字的形狀、筆順、筆畫'
+    :'請簽名確認是本人，字的形狀、筆順、筆畫每項需達 50% 才算通過';
+  $('sgBtn').textContent=sgMode==='enroll'?'確認第 '+n+' 次':'確認簽名';
+}
+// mode：'enroll' 建立範本、'verify' 驗證；done：成功後要做的事；back：取消時回到哪一頁
+function sgStart(mode,done,back){
+  sgMode=mode; sgSamples=[]; sgDone=done; sgBack=back||'fu';
+  $('sgRes').className='sgres';
+  go('sg'); sgClear(); sgHint();
+}
+function sgCancel(){sgMode=null;go(sgBack);}
+
+function sgAdd(e){
+  const r=cv.getBoundingClientRect();
+  const p=[+(e.clientX-r.left).toFixed(1),+(e.clientY-r.top).toFixed(1),Math.round(e.timeStamp-sgT0),+(e.pressure||0.5).toFixed(2)];
+  const last=sgCur[sgCur.length-1];
+  sgCur.push(p);
+  cx.beginPath();
+  if(last){cx.moveTo(last[0],last[1]);cx.lineTo(p[0],p[1]);}
+  else{cx.moveTo(p[0],p[1]);cx.lineTo(p[0]+0.1,p[1]+0.1);}
+  cx.stroke();
+}
+cv.addEventListener('pointerdown',e=>{
+  e.preventDefault(); cv.setPointerCapture(e.pointerId);
+  if(!sgStrokes.length)sgT0=e.timeStamp;   // 第一筆開始計時
+  sgCur=[]; sgStrokes.push(sgCur);         // 每次落筆 = 新的一筆
+  sgAdd(e);
+});
+cv.addEventListener('pointermove',e=>{
+  if(!sgCur)return; e.preventDefault();
+  (e.getCoalescedEvents?e.getCoalescedEvents():[e]).forEach(sgAdd);
+});
+['pointerup','pointercancel'].forEach(n=>cv.addEventListener(n,()=>{sgCur=null;}));
+
+function sgShow(j){
+  const N={shape:'字的形狀',order:'筆順',stroke:'筆畫'};
+  $('sgRes').innerHTML=Object.keys(N).map(k=>`<div class="sgm ${j.sim[k]>=50?'ok':'no'}">${N[k]}<b>${j.sim[k]}%</b></div>`).join('');
+  $('sgRes').className='sgres on';
+}
+async function sgSubmit(){
+  const pts=sgStrokes.reduce((a,s)=>a+s.length,0);
+  if(pts<15)return toast('簽名太短，請再簽一次','err');
+  const btn=$('sgBtn'); btn.disabled=true;
+  try{
+    if(sgMode==='enroll'){
+      sgSamples.push(sgStrokes);
+      if(sgSamples.length<3){sgClear();sgHint();toast('✓ 第 '+sgSamples.length+' 次完成，請再簽一次','ok');return;}
+      try{
+        await api('/api/sig/enroll',{samples:sgSamples});
+        const d=sgDone; sgMode=null; d&&d();
+        toast('✓ 簽名範本已建立（已加密存在這個瀏覽器），現在可以新增指紋','ok');
+      }catch(e){sgSamples=[];sgClear();sgHint();toast(fpErr(e),'err');}
+    }else{
+      const j=await api('/api/sig/verify',{sample:sgStrokes});
+      sgShow(j);
+      if(j.ok){
+        toast('✓ 簽名通過，確認是本人','ok');
+        setTimeout(()=>{const d=sgDone;sgMode=null;d&&d();toast('✓ 已通過本人簽名驗證，可以設定指紋','ok');},1200);
+      }else{toast('❌ '+j.reason,'err');sgClear();}
+    }
+  }catch(e){toast(fpErr(e),'err');sgClear();}
+  finally{btn.disabled=false;}
+}
+</script>
+</body>
+</html>
