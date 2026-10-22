@@ -217,17 +217,18 @@ input::placeholder{color:#64748b}
     <button class="btn bg" onclick="cancel2FA()">← 返回登入</button>
   </div>
 
-  <!-- 指紋解鎖（指紋公鑰存在伺服器） -->
+  <!-- 指紋解鎖：和登入用的是同一組指紋 -->
   <div id="fu" class="sec">
     <div style="text-align:center;margin-bottom:1.5rem">
       <div id="fuIcon" class="lockbox"><i class="ti ti-lock"></i></div>
       <div id="fuState" style="font-size:20px;font-weight:600;color:#f1f5f9">已上鎖</div>
-      <div id="fuHint" style="font-size:13px;color:#94a3b8;margin-top:6px">連線中…</div>
+      <div id="fuHint" style="font-size:13px;color:#94a3b8;margin-top:6px">載入中…</div>
     </div>
     <button class="btn bp" id="fuUnlockBtn" style="display:none" onclick="fuUnlock()"><i class="ti ti-fingerprint"></i> 用指紋解鎖</button>
     <button class="btn bg" id="fuLockBtn" style="margin-top:10px;display:none" onclick="fuLock()"><i class="ti ti-lock"></i> 重新上鎖</button>
-    <button class="btn bp" id="fuEnrollBtn" style="display:none" onclick="sgStart('enroll',()=>go('fm'),'fu')"><i class="ti ti-signature"></i> 建立本人簽名（第一次使用）</button>
-    <button class="btn bg" id="fuManageBtn" style="margin-top:10px;display:none" onclick="fuManage()"><i class="ti ti-settings"></i> 設定指紋（需本人簽名）</button>
+    <button class="btn bp" id="fuEnrollBtn" style="margin-top:10px;display:none" onclick="sgStart('enroll',()=>go('fu'),'fu')"><i class="ti ti-signature"></i> 建立本人簽名（第一次使用）</button>
+    <button class="btn bg" id="fuSigBtn" style="margin-top:10px;display:none" onclick="sgStart('verify',()=>go('fu'),'fu')"><i class="ti ti-signature"></i> 簽名驗證</button>
+    <button class="btn bg" id="fuManageBtn" style="margin-top:10px;display:none" onclick="fuManage()"><i class="ti ti-settings"></i> 設定（需指紋解鎖）</button>
   </div>
 
   <!-- 簽名板 -->
@@ -246,16 +247,15 @@ input::placeholder{color:#64748b}
     <button class="fpl" onclick="sgCancel()">← 取消</button>
   </div>
 
-  <!-- 指紋設定（通過簽名後才能進來） -->
+  <!-- 設定（用指紋解鎖後才能進來） -->
   <div id="fm" class="sec">
     <div style="text-align:center;margin-bottom:1.2rem">
-      <div style="font-size:16px;font-weight:600;color:#f1f5f9">指紋設定</div>
+      <div style="font-size:16px;font-weight:600;color:#f1f5f9">設定</div>
       <div id="fmLeft" style="font-size:12px;color:#4ade80;margin-top:4px"></div>
     </div>
+    <div style="font-size:14px;color:#e2e8f0;font-weight:500;margin-bottom:8px">已綁定的指紋</div>
     <div id="fmList" class="klist"></div>
-    <div class="f" style="margin-top:16px"><label>新增指紋：裝置名稱</label><div class="iw"><i class="ti ti-device-mobile ic"></i><input id="fmName" type="text" maxlength="30" placeholder="例如：我的手機"></div></div>
-    <button class="btn bp" onclick="fmAdd()"><i class="ti ti-fingerprint"></i> 按指紋新增</button>
-    <button class="btn bg" style="margin-top:10px" onclick="sgStart('enroll',()=>go('fm'),'fm')"><i class="ti ti-signature"></i> 重新設定簽名</button>
+    <button class="btn bp" style="margin-top:16px" onclick="sgStart('enroll',()=>go('fm'),'fm')"><i class="ti ti-signature"></i> 重新設定簽名</button>
     <div class="dv">或</div>
     <button class="btn bg" onclick="go('fu')">← 返回指紋解鎖</button>
   </div>
@@ -386,7 +386,8 @@ async function reg(){
   if(!e.includes('@'))return toast('請輸入有效 Email','err');
   if(db[u])return toast('此帳號已存在','err');
   if(score.A<40)return toast('密碼強度不足','err');
-  const acc={e,tmp:false,fp:regFp};await setPw(acc,p);
+  const acc={e,tmp:false,fp:regFp?regFp.id:null};await setPw(acc,p);
+  if(regFp)setCreds(getCreds().filter(r=>r.id!==regFp.id).concat({...regFp,name:u,user:u,created:nowStr(),last_used:null}));
   db[u]=acc;saveDb();regFp=null;
   $('fgbtn').innerHTML='<i class="ti ti-fingerprint"></i> 綁定指紋（選填）';
   toast('帳號建立成功！','ok');
@@ -612,7 +613,7 @@ function sigCompare(a,b){
 const countTol=n=>Math.max(2,Math.round(n*SIG.COUNT_TOL));
 
 async function sigEnroll(b){
-  if(await loadTpl()&&!sigOk())throw new Error('要重新設定簽名，請先通過本人簽名驗證');
+  if(await loadTpl()&&!fpOk())throw new Error('要重新設定簽名，請先用指紋解鎖');
   const samples=b.samples;
   if(!Array.isArray(samples)||samples.length!==SIG.ENROLL)throw new Error('需要簽名 '+SIG.ENROLL+' 次');
   const feats=samples.map(s=>sigFeatures(sigClean(s)));
@@ -677,28 +678,25 @@ async function importPub(pk,alg){
   if(alg===-257)return crypto.subtle.importKey('spki',pk,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
   throw new Error('不支援的金鑰類型');
 }
-async function regOptions(){
-  if(!sigOk())throw new Error('請先通過本人簽名驗證');
+const fpOk=()=>S.fpAt&&nowSec()-S.fpAt<SIG.VALID;   // 指紋驗證通過後 5 分鐘內可以改設定
+async function regOptions(){   // 建立帳號時綁定指紋：出題目
   const c=bytesB64u(rand32()); S.fpReg={c,exp:nowSec()+120};
-  return{challenge:c,rpId:rpId(),userId:bytesB64u(crypto.getRandomValues(new Uint8Array(16))),exclude:getCreds().map(r=>r.id)};
+  return{challenge:c,rpId:rpId(),userId:bytesB64u(crypto.getRandomValues(new Uint8Array(16)))};
 }
-async function regVerify(d){
-  if(!sigOk())throw new Error('簽名驗證已過期，請重新簽名');
+async function regVerify(d){   // 驗證手機回傳的公鑰，等建立帳號時才正式存
   checkClient(d,'webauthn.create','fpReg');
   const cnt=await checkAuthData(fromB64u(d.authenticatorData));
   const alg=+d.alg;
   try{await importPub(fromB64u(d.publicKey),alg);}catch(e){throw new Error('不支援的金鑰類型');}
-  const name=(String(d.name||'').trim()||'未命名裝置').slice(0,30);
-  setCreds(getCreds().filter(r=>r.id!==d.id).concat({id:d.id,name,public_key:d.publicKey,alg,sign_count:cnt,created:nowStr(),last_used:null}));
-  return{ok:true,name};
+  return{ok:true,cred:{id:d.id,public_key:d.publicKey,alg,sign_count:cnt}};
 }
-async function loginOptions(){
-  const ids=getCreds().map(r=>r.id);
-  if(!ids.length)throw new Error('還沒有設定指紋');
+async function loginOptions(b){
+  const ids=(b&&b.ids)||getCreds().map(r=>r.id);
+  if(!ids.length)throw new Error('還沒有綁定指紋');
   const c=bytesB64u(rand32()); S.fpAuth={c,exp:nowSec()+120};
   return{challenge:c,rpId:rpId(),allow:ids};
 }
-async function loginVerify(d){
+async function loginVerify(d){   // 登入和指紋解鎖共用：驗證指紋簽章
   const raw=checkClient(d,'webauthn.get','fpAuth');
   const creds=getCreds(), row=creds.find(r=>r.id===d.id);
   if(!row)throw new Error('找不到這把指紋金鑰（可能已被刪除）');
@@ -714,17 +712,17 @@ async function loginVerify(d){
   if(!good)throw new Error('簽章驗證失敗');
   if((cnt||row.sign_count)&&cnt<=row.sign_count)throw new Error('簽章計數異常，可能是被複製的金鑰');
   row.sign_count=cnt; row.last_used=nowStr(); setCreds(creds);
-  S.unlocked=true;
-  return{ok:true,name:row.name};
+  S.unlocked=true; S.fpAt=nowSec();   // 指紋通過：登入頁和指紋解鎖頁都算解鎖
+  return{ok:true,name:row.name,user:row.user||null};
 }
 async function apiStatus(){
-  const ok=sigOk();
+  const ok=fpOk();
   return{
     sig_enrolled:!!(await loadTpl()),
-    sig_ok:!!ok,
-    sig_left:ok?Math.floor(SIG.VALID-(nowSec()-S.sigOk)):0,
+    fp_ok:!!ok,
+    fp_left:ok?Math.floor(SIG.VALID-(nowSec()-S.fpAt)):0,
     unlocked:S.unlocked,
-    creds:getCreds().map(({id,name,created,last_used})=>({id,name,created,last_used}))
+    creds:getCreds().map(({id,name,user,created,last_used})=>({id,name,user,created,last_used}))
   };
 }
 const ROUTES={
@@ -734,22 +732,41 @@ const ROUTES={
   'POST /api/fp/register/verify':regVerify,
   'POST /api/fp/login/options':loginOptions,
   'POST /api/fp/login/verify':loginVerify,
-  'POST /api/lock':async()=>{S.unlocked=false;S.sigOk=0;return{ok:true};},
+  'POST /api/lock':async()=>{S.unlocked=false;S.fpAt=0;S.sigOk=0;return{ok:true};},
   'GET /api/status':apiStatus
 };
 // 介面跟原本呼叫伺服器時一樣，只是改成在本機執行
 async function api(path,body,method){
   method=method||'POST';
   if(method==='DELETE'&&path.startsWith('/api/fp/')){
-    if(!sigOk())throw new Error('請先通過本人簽名驗證');
+    if(!fpOk())throw new Error('請先用指紋解鎖');
     const id=decodeURIComponent(path.slice(8));
     setCreds(getCreds().filter(r=>r.id!==id));
+    for(const u in db)if(db[u].fp===id)db[u].fp=null;
+    saveDb();
     return{ok:true};
   }
   const fn=ROUTES[method+' '+path];
   if(!fn)throw new Error('找不到功能：'+path);
   return fn(body||{});
 }
+// 舊版存在帳號裡的指紋，自動搬到共用的指紋清單
+(function(){
+  const u8=s=>s.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const creds=getCreds(); let changed=false;
+  for(const u in db){
+    const f=db[u].fp;
+    if(f&&typeof f==='object'){
+      changed=true;
+      if(f.pk){
+        const id=u8(f.id);
+        if(!creds.some(r=>r.id===id))creds.push({id,name:u,user:u,public_key:u8(f.pk),alg:f.alg||-7,sign_count:0,created:nowStr(),last_used:null});
+        db[u].fp=id;
+      }else db[u].fp=null;
+    }
+  }
+  if(changed){setCreds(creds);saveDb();}
+})();
 
 // 檢查環境：WebAuthn 只能在 https 或 localhost 上使用
 function fpSupport(){
@@ -768,7 +785,7 @@ function fpErr(e){
   return '❌ '+(e.message||e.name);
 }
 
-/* ===== 帳號頁的指紋登入（存在網頁裡，和之前一樣） ===== */
+/* ===== 指紋：建立帳號時綁定，登入和指紋解鎖都用同一個 ===== */
 async function fpBind(){
   const err=fpSupport(); if(err)return toast(err,'err');
   const u=val('ru'); if(!u)return toast('請先填寫帳號，再綁定指紋','err');
@@ -776,67 +793,62 @@ async function fpBind(){
   if(!await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())
     return toast('這台裝置沒有可用的指紋，請先到系統設定新增指紋','err');
   try{
+    const o=await api('/api/fp/register/options');
     toast('請按壓指紋…','info');
     const cred=await navigator.credentials.create({publicKey:{
-      challenge:rand32(),
-      rp:{name:'密碼檢測員'},
-      user:{id:new TextEncoder().encode(u).slice(0,64),name:u,displayName:u},
+      challenge:fromB64u(o.challenge),
+      rp:{id:o.rpId,name:'密碼檢測員'},
+      user:{id:fromB64u(o.userId),name:u,displayName:u},
       pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
       authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},
       attestation:'none',
       timeout:60000
     }});
     const r=cred.response;
-    regFp={
-      id:b64(cred.rawId),
-      pk:r.getPublicKey&&r.getPublicKey()?b64(r.getPublicKey()):null,
-      alg:r.getPublicKeyAlgorithm?r.getPublicKeyAlgorithm():-7
-    };
+    if(!r.getPublicKey||!r.getAuthenticatorData||!r.getPublicKey())throw new Error('瀏覽器版本太舊，請更新 Chrome 後再試');
+    const j=await api('/api/fp/register/verify',{
+      id:b64url(cred.rawId),
+      clientDataJSON:b64url(r.clientDataJSON),
+      authenticatorData:b64url(r.getAuthenticatorData()),
+      publicKey:b64url(r.getPublicKey()),
+      alg:r.getPublicKeyAlgorithm()
+    });
+    regFp=j.cred;
     $('fgbtn').innerHTML='<i class="ti ti-check"></i> 已綁定指紋';
-    toast('✓ 指紋已綁定，建立帳號後生效','ok');
+    toast('✓ 指紋已綁定，按「建立帳號」後生效','ok');
   }catch(e){toast(fpErr(e),'err');}
 }
-
+// 出題目 → 手機按指紋簽名 → 驗證簽章（登入和指紋解鎖共用）
+async function fpAssert(ids){
+  const o=await api('/api/fp/login/options',{ids});
+  toast('請按壓指紋…','info');
+  const a=await navigator.credentials.get({publicKey:{
+    challenge:fromB64u(o.challenge),
+    rpId:o.rpId,
+    allowCredentials:o.allow.map(id=>({type:'public-key',id:fromB64u(id),transports:['internal']})),
+    userVerification:'required',
+    timeout:60000
+  }});
+  const r=a.response;
+  return api('/api/fp/login/verify',{
+    id:b64url(a.rawId),
+    clientDataJSON:b64url(r.clientDataJSON),
+    authenticatorData:b64url(r.authenticatorData),
+    signature:b64url(r.signature)
+  });
+}
 async function fpLogin(){
   const err=fpSupport(); if(err)return toast(err,'err');
   const u=val('lu');
-  const users=Object.entries(db).filter(([k,o])=>o.fp&&(!u||k===u||o.e===u));
-  if(!users.length)return toast(u?'這個帳號沒有綁定指紋':'尚無已綁定指紋的帳號，請先到「建立帳號」綁定指紋並建立帳號','err');
-  const challenge=rand32();
+  const key=u?(db[u]?u:Object.keys(db).find(k=>db[k].e===u)):null;
+  if(u&&!key)return toast('找不到這個帳號','err');
+  const ids=getCreds().filter(r=>r.user&&db[r.user]&&db[r.user].fp===r.id&&(!key||r.user===key)).map(r=>r.id);
+  if(!ids.length)return toast(key?'這個帳號沒有綁定指紋':'還沒有綁定指紋的帳號，請先到「建立帳號」綁定指紋並建立帳號','err');
   try{
-    toast('請按壓指紋…','info');
-    const a=await navigator.credentials.get({publicKey:{
-      challenge,
-      allowCredentials:users.map(([,o])=>({type:'public-key',id:unb64(o.fp.id),transports:['internal']})),
-      userVerification:'required',
-      timeout:60000
-    }});
-    const hit=users.find(([,o])=>o.fp.id===b64(a.rawId));
-    if(!hit)return toast('找不到對應的帳號','err');
-    const [key,o]=hit;
-    const cd=JSON.parse(new TextDecoder().decode(a.response.clientDataJSON));
-    if(cd.type!=='webauthn.get'||cd.challenge!==b64url(challenge)||cd.origin!==location.origin)
-      return toast('驗證失敗：題目或來源不符','err');
-    const ad=new Uint8Array(a.response.authenticatorData);
-    if(!(ad[32]&0x04))return toast('驗證失敗：裝置沒有確認使用者身分','err');
-    if(o.fp.pk&&!await fpVerify(o.fp,ad,a.response.clientDataJSON,a.response.signature))
-      return toast('驗證失敗：簽章不正確','err');
+    const j=await fpAssert(ids);
     $('lp').value='';
-    toast('登入成功！歡迎 '+key+'（指紋驗證通過'+(o.fp.pk?'，簽章已驗證':'')+'）','ok');
+    toast('登入成功！歡迎 '+j.user+'（指紋簽章已驗證）','ok');
   }catch(e){toast(fpErr(e),'err');}
-}
-
-// 驗證簽名：簽名內容 = authenticatorData + SHA-256(clientDataJSON)
-async function fpVerify(fp,ad,cdj,sig){
-  const hash=new Uint8Array(await crypto.subtle.digest('SHA-256',cdj));
-  const data=new Uint8Array(ad.length+hash.length); data.set(ad); data.set(hash,ad.length);
-  const spki=unb64(fp.pk);
-  if(fp.alg===-257){
-    const k=await crypto.subtle.importKey('spki',spki,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
-    return crypto.subtle.verify('RSASSA-PKCS1-v1_5',k,sig,data);
-  }
-  const k=await crypto.subtle.importKey('spki',spki,{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
-  return crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},k,derToRaw(new Uint8Array(sig)),data);
 }
 // ECDSA 簽名格式轉換：DER → 64 位元組的 r||s
 function derToRaw(d){
@@ -850,9 +862,9 @@ function derToRaw(d){
 }
 
 /* ===================================================================
-   指紋解鎖（指紋公鑰存在伺服器，設定指紋前要先通過本人簽名）
+   指紋解鎖（和登入是同一組指紋；改簽名要先用指紋解鎖）
    =================================================================== */
-let fuS=null; // 伺服器回傳的狀態
+let fuS=null;
 
 async function fuLoad(){
   try{fuS=await api('/api/status',null,'GET');}catch(e){fuS=null;}
@@ -864,42 +876,27 @@ function fuRefresh(){
   $('fuIcon').innerHTML='<i class="ti '+(open?'ti-lock-open':'ti-lock')+'"></i>';
   $('fuState').textContent=open?'已解鎖':'已上鎖';
   $('fuHint').textContent=!ok?'載入失敗，請重新整理頁面'
-    :!fuS.sig_enrolled?'第一次使用：請先建立本人簽名範本'
-    :!has?'還沒有設定指紋，請按「設定指紋」新增（需本人簽名）'
-    :open?'按「重新上鎖」可以再鎖起來':'按下按鈕，用你的指紋解鎖';
+    :!has?'還沒有指紋：請到「建立帳號」綁定指紋（登入和解鎖用同一個指紋）'
+    :open?'已用指紋解鎖，可以進入「設定」修改簽名':'按下按鈕，用你的指紋解鎖';
   $('fuUnlockBtn').style.display=has&&!open?'block':'none';
   $('fuLockBtn').style.display=open?'block':'none';
   $('fuEnrollBtn').style.display=ok&&!fuS.sig_enrolled?'block':'none';
-  $('fuManageBtn').style.display=ok&&fuS.sig_enrolled?'block':'none';
+  $('fuSigBtn').style.display=ok&&fuS.sig_enrolled?'block':'none';
+  $('fuManageBtn').style.display=has?'block':'none';
 }
-// 要進入指紋設定：簽名驗證還有效就直接進去，否則先簽名
-function fuManage(){
-  if(fuS&&fuS.sig_ok)go('fm');
-  else sgStart('verify',()=>go('fm'),'fu');
+// 進入設定：指紋驗證還有效就直接進去，否則先按指紋
+async function fuManage(){
+  if(fuS&&fuS.fp_ok)return go('fm');
+  if(await fuUnlock())go('fm');
 }
-// 指紋解鎖：伺服器出題目 → 手機按指紋簽名 → 伺服器驗證簽章
 async function fuUnlock(){
-  const err=fpSupport(); if(err)return toast(err,'err');
+  const err=fpSupport(); if(err){toast(err,'err');return false;}
   try{
-    const o=await api('/api/fp/login/options');
-    toast('請按壓指紋…','info');
-    const a=await navigator.credentials.get({publicKey:{
-      challenge:fromB64u(o.challenge),
-      rpId:o.rpId,
-      allowCredentials:o.allow.map(id=>({type:'public-key',id:fromB64u(id),transports:['internal']})),
-      userVerification:'required',
-      timeout:60000
-    }});
-    const r=a.response;
-    const j=await api('/api/fp/login/verify',{
-      id:b64url(a.rawId),
-      clientDataJSON:b64url(r.clientDataJSON),
-      authenticatorData:b64url(r.authenticatorData),
-      signature:b64url(r.signature)
-    });
+    const j=await fpAssert(null);
     await fuLoad();
-    toast('🔓 解鎖成功！（已驗證「'+j.name+'」的指紋簽章）','ok');
-  }catch(e){toast(fpErr(e),'err');}
+    toast('🔓 解鎖成功！（已驗證「'+(j.user||j.name)+'」的指紋簽章）','ok');
+    return true;
+  }catch(e){toast(fpErr(e),'err');return false;}
 }
 async function fuLock(){
   try{await api('/api/lock');}catch(e){}
@@ -907,52 +904,18 @@ async function fuLock(){
   toast('🔒 已重新上鎖','info');
 }
 
-/* ===== 指紋設定頁 ===== */
+/* ===== 設定頁 ===== */
 async function fmLoad(){
   try{fuS=await api('/api/status',null,'GET');}catch(e){fuS=null;}
-  if(!fuS||!fuS.sig_ok){go('fu');return toast('簽名驗證已過期，請重新簽名','err');}
-  $('fmLeft').textContent='✓ 已通過本人簽名驗證（剩 '+Math.ceil(fuS.sig_left/60)+' 分鐘有效）';
-  $('fmList').innerHTML=!fuS.creds.length?'<div class="kempty">還沒有設定指紋</div>':fuS.creds.map(k=>
+  if(!fuS||!fuS.fp_ok){go('fu');return toast('請先用指紋解鎖','err');}
+  $('fmLeft').textContent='✓ 已通過指紋驗證（'+Math.ceil(fuS.fp_left/60)+' 分鐘內可以修改）';
+  $('fmList').innerHTML=!fuS.creds.length?'<div class="kempty">還沒有綁定指紋</div>':fuS.creds.map(k=>
     `<div class="kitem"><i class="ti ti-fingerprint" style="font-size:22px;color:#60a5fa"></i>
-     <div class="kn"><b>${esc(k.name)}</b><span>新增：${esc(k.created)}　上次使用：${esc(k.last_used||'尚未使用')}</span></div>
+     <div class="kn"><b>${esc(k.user?'帳號：'+k.user:k.name)}</b><span>新增：${esc(k.created)}　上次使用：${esc(k.last_used||'尚未使用')}</span></div>
      <button class="kdel" title="刪除" onclick="fmDel('${k.id}')"><i class="ti ti-trash"></i></button></div>`).join('');
-    }
-    
-// 新增指紋：伺服器確認簽名通過才給題目，手機產生金鑰對，公鑰交給伺服器存
-async function fmAdd(){
-  const err=fpSupport(); if(err)return toast(err,'err');
-  if(!await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())
-    return toast('這台裝置沒有可用的指紋，請先到系統設定新增指紋','err');
-  try{
-    const o=await api('/api/fp/register/options');
-    toast('請按壓指紋…','info');
-    const cred=await navigator.credentials.create({publicKey:{
-      challenge:fromB64u(o.challenge),
-      rp:{id:o.rpId,name:'密碼檢測員'},
-      user:{id:fromB64u(o.userId),name:'指紋解鎖',displayName:'指紋解鎖'},
-      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
-      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},
-      excludeCredentials:o.exclude.map(id=>({type:'public-key',id:fromB64u(id),transports:['internal']})),
-      attestation:'none',
-      timeout:60000
-    }});
-    const r=cred.response;
-    if(!r.getPublicKey||!r.getAuthenticatorData||!r.getPublicKey())throw new Error('瀏覽器版本太舊，請更新 Chrome 後再試');
-    const j=await api('/api/fp/register/verify',{
-      name:val('fmName'),
-      id:b64url(cred.rawId),
-      clientDataJSON:b64url(r.clientDataJSON),
-      authenticatorData:b64url(r.getAuthenticatorData()),
-      publicKey:b64url(r.getPublicKey()),
-      alg:r.getPublicKeyAlgorithm()
-    });
-    $('fmName').value='';
-    await fmLoad();
-    toast('✓「'+j.name+'」的指紋公鑰已儲存','ok');
-  }catch(e){toast(fpErr(e),'err');}
 }
 async function fmDel(id){
-  try{await api('/api/fp/'+id,null,'DELETE');await fmLoad();toast('已刪除這把指紋金鑰','info');}
+  try{await api('/api/fp/'+id,null,'DELETE');await fmLoad();toast('已刪除這個指紋','info');}
   catch(e){toast(fpErr(e),'err');}
 }
 
@@ -1023,14 +986,14 @@ async function sgSubmit(){
       try{
         await api('/api/sig/enroll',{samples:sgSamples});
         const d=sgDone; sgMode=null; d&&d();
-        toast('✓ 簽名範本已建立（已加密存在這個瀏覽器），現在可以新增指紋','ok');
+        toast('✓ 簽名範本已建立（已加密存在這個瀏覽器）','ok');
       }catch(e){sgSamples=[];sgClear();sgHint();toast(fpErr(e),'err');}
     }else{
       const j=await api('/api/sig/verify',{sample:sgStrokes});
       sgShow(j);
       if(j.ok){
         toast('✓ 簽名通過，確認是本人','ok');
-        setTimeout(()=>{const d=sgDone;sgMode=null;d&&d();toast('✓ 已通過本人簽名驗證，可以設定指紋','ok');},1200);
+        setTimeout(()=>{const d=sgDone;sgMode=null;d&&d();toast('✓ 簽名驗證通過，確認是本人','ok');},1200);
       }else{toast('❌ '+j.reason,'err');sgClear();}
     }
   }catch(e){toast(fpErr(e),'err');sgClear();}
