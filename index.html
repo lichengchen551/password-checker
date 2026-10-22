@@ -3,7 +3,48 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>密碼檢測員</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<!-- 圖示直接內建在網頁裡（SVG），不用從網路下載，任何地方都能顯示 -->
+<style>
+.ti{display:inline-block;width:1em;height:1em;vertical-align:-.125em;flex-shrink:0;background-color:currentColor;-webkit-mask:var(--i) center/contain no-repeat;mask:var(--i) center/contain no-repeat}
+.ti-loader-2{animation:tispin 1s linear infinite}
+@keyframes tispin{to{transform:rotate(360deg)}}
+</style>
+<script>
+(function(){
+  var I={
+    'shield-lock':'<path d="M12 3a12 12 0 0 0 8.5 3A12 12 0 0 1 12 21 12 12 0 0 1 3.5 6 12 12 0 0 0 12 3"/><circle cx="12" cy="11" r="1"/><path d="M12 12v2.5"/>',
+    'shield-check':'<path d="M12 3a12 12 0 0 0 8.5 3A12 12 0 0 1 12 21 12 12 0 0 1 3.5 6 12 12 0 0 0 12 3"/><path d="M9 12l2 2 4-4"/>',
+    'user':'<circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>',
+    'lock':'<rect x="5" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="16" r="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    'lock-open':'<rect x="5" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="16" r="1"/><path d="M8 11V7a4 4 0 0 1 7.75-1.4"/>',
+    'lock-check':'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><path d="M9.5 16l1.8 1.8 3.2-3.3"/>',
+    'eye':'<circle cx="12" cy="12" r="2"/><path d="M21 12c-2.4 4-5.4 6-9 6s-6.6-2-9-6c2.4-4 5.4-6 9-6s6.6 2 9 6"/>',
+    'eye-off':'<path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M16.7 16.7A9.5 9.5 0 0 1 12 18c-3.6 0-6.6-2-9-6 1.3-2.1 2.7-3.7 4.3-4.7M9.9 6.2A9 9 0 0 1 12 6c3.6 0 6.6 2 9 6-.7 1.1-1.4 2.1-2.2 2.9"/><path d="M3 3l18 18"/>',
+    'mail':'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+    'mail-forward':'<path d="M12 18H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6"/><path d="M3 7l9 6 9-6"/><path d="M15 18h6M18 15l3 3-3 3"/>',
+    'fingerprint':'<path d="M18.9 7a8 8 0 0 1 1.1 5v1a6 6 0 0 0 .8 3"/><path d="M8 11a4 4 0 0 1 8 0v1a10 10 0 0 0 2 6"/><path d="M12 11v2a14 14 0 0 0 2.5 8"/><path d="M8 15a18 18 0 0 0 1.8 6"/><path d="M4.9 19a22 22 0 0 1-.9-7v-1a8 8 0 0 1 12-6.95"/>',
+    'send':'<path d="M10 14L21 3"/><path d="M21 3l-6.5 18a.55.55 0 0 1-1 0L10 14l-7-3.5a.55.55 0 0 1 0-1L21 3"/>',
+    'alert-triangle':'<path d="M10.36 3.6L2.3 17.6a1.9 1.9 0 0 0 1.6 2.9h16.2a1.9 1.9 0 0 0 1.6-2.9L13.64 3.6a1.9 1.9 0 0 0-3.28 0z"/><path d="M12 9v4M12 16.5v.01"/>',
+    'key':'<circle cx="8" cy="15" r="4"/><path d="M10.85 12.15L19 4M18 5l2 2M15 8l2 2"/>',
+    'signature':'<path d="M3 17c3-3 5.5-7.5 4-9S3 9.5 3 12.5 5.5 18 8 18c1.6 0 3-1.2 4-3 .2 1.8 1.2 3 2.5 3s2.2-1.2 2.6-2.3c.3 1.2 1 2.3 2.4 2.3H21"/><path d="M3 21h18"/>',
+    'eraser':'<path d="M19 20H8.5l-4.2-4.3a1 1 0 0 1 0-1.4l10-10a1 1 0 0 1 1.4 0l5 5a1 1 0 0 1 0 1.4L11.5 20"/><path d="M18 13.3L11.7 7"/>',
+    'settings':'<circle cx="12" cy="12" r="3"/><path d="M10.3 4.3c.4-1.8 3-1.8 3.4 0a1.7 1.7 0 0 0 2.6 1.1c1.5-.9 3.3.8 2.4 2.4a1.7 1.7 0 0 0 1 2.5c1.8.5 1.8 3 0 3.5a1.7 1.7 0 0 0-1 2.5c.9 1.6-.9 3.4-2.4 2.4a1.7 1.7 0 0 0-2.6 1.1c-.4 1.8-3 1.8-3.4 0a1.7 1.7 0 0 0-2.6-1.1c-1.5.9-3.3-.8-2.4-2.4a1.7 1.7 0 0 0-1-2.5c-1.8-.5-1.8-3 0-3.5a1.7 1.7 0 0 0 1-2.5c-.9-1.6.9-3.4 2.4-2.4a1.7 1.7 0 0 0 2.6-1.1z"/>',
+    'device-mobile':'<rect x="6" y="3" width="12" height="18" rx="2"/><path d="M11 4h2M12 17v.01"/>',
+    'trash':'<path d="M4 7h16M10 11v6M14 11v6"/><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/>',
+    'loader-2':'<path d="M12 3a9 9 0 1 0 9 9"/>',
+    'bulb':'<path d="M3 12h1M12 3v1M20 12h1M5.6 5.6l.7.7M18.4 5.6l-.7.7"/><path d="M9 16a5 5 0 1 1 6 0 3.5 3.5 0 0 0-1 3 2 2 0 0 1-4 0 3.5 3.5 0 0 0-1-3"/><path d="M9.7 17h4.6"/>',
+    'check':'<path d="M5 12l5 5L20 7"/>',
+    'x':'<path d="M18 6L6 18M6 6l12 12"/>',
+    'circle':'<circle cx="12" cy="12" r="9"/>'
+  };
+  var css='';
+  for(var k in I){
+    var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+I[k]+'</svg>';
+    css+='.ti-'+k+'{--i:url("data:image/svg+xml,'+encodeURIComponent(svg)+'")}\n';
+  }
+  var st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
@@ -224,7 +265,17 @@ input::placeholder{color:#64748b}
 emailjs.init({publicKey:'G1iBcJUanJcj7psLS'});
 const SVC='service_22sqf1n',TPL='template_oy8xzck';
 const MY_PUB='7iTsiVO_ykFdehkdr',MY_SVC='service_r85q62a',MY_TPL='template_yfjsq3m';
-const db={}, $=id=>document.getElementById(id), val=id=>$(id).value.trim();
+const $=id=>document.getElementById(id), val=id=>$(id).value.trim();
+// 帳號資料存在瀏覽器（localStorage），重新整理或切換 App 都不會消失
+const db=(()=>{try{return JSON.parse(localStorage.getItem('pc_db'))||{};}catch(e){return {};}})();
+function saveDb(){try{localStorage.setItem('pc_db',JSON.stringify(db));}catch(e){}}
+// 密碼不存明文：加鹽後用 PBKDF2（SHA-256，10 萬次）算雜湊值才存
+async function pwHash(p,salt){
+  const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveBits']);
+  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations:100000,hash:'SHA-256'},k,256);
+  return btoa(String.fromCharCode(...new Uint8Array(bits)));
+}
+async function setPw(o,p){o.s=btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));o.h=await pwHash(p,o.s);delete o.p;}
 const score={A:0,B:0}; let curUser=null;
 
 const COM_RAW={
@@ -296,7 +347,8 @@ async function forgotPw(){
   toast('正在寄送臨時密碼…','info');
   const tmp=randPw();
   const found=Object.keys(db).find(u=>db[u].e===email);
-  if(found){db[found].p=tmp;db[found].tmp=true;}else{db['__'+email]={e:email,p:tmp,tmp:true};}
+  const acc=found?db[found]:(db['__'+email]={e:email});
+  await setPw(acc,tmp);acc.tmp=true;saveDb();
   try{
     await emailjs.send(SVC,TPL,{to_email:email,user:email,temp_pass:tmp});
     toast('✓ 臨時密碼已寄至 '+email,'ok');
@@ -305,11 +357,11 @@ async function forgotPw(){
   finally{btn.disabled=false;btn.innerHTML='<i class="ti ti-send" style="font-size:14px;vertical-align:-1px;margin-right:6px"></i>寄送臨時密碼';}
 }
 // 驗證帳號密碼；若為臨時密碼則強制跳轉重設頁，否則進入雙因子驗證
-function login(){
+async function login(){
   const u=val('lu'),p=$('lp').value;
   if(!u||!p)return toast('請填寫帳號與密碼','err');
   const key=db[u]?u:Object.keys(db).find(k=>db[k].e===u);
-  if(!key||db[key].p!==p)return toast('帳號或密碼錯誤','err');
+  if(!key||!db[key].h||await pwHash(p,db[key].s)!==db[key].h)return toast('帳號或密碼錯誤','err');
   if(db[key].tmp){
     curUser=key;$('np').value='';$('np2').value='';
     $('swB').style.display='none';$('mhB').style.display='none';
@@ -320,21 +372,22 @@ function login(){
 // 確認新密碼填寫完整且強度 ≥ 40 分，才啟用「確認更新」按鈕
 function chkR(){const p1=$('np').value,p2=$('np2').value;$('rb2').disabled=!(p1&&p2&&p1===p2&&score.B>=40);}
 // 將新密碼寫入 db，清除臨時標記，返回登入頁
-function doReset(){
+async function doReset(){
   if(!curUser)return toast('請重新登入','err');
-  db[curUser].p=$('np').value;db[curUser].tmp=false;
+  await setPw(db[curUser],$('np').value);db[curUser].tmp=false;saveDb();
   toast('✓ 密碼已更新！請重新登入','ok');curUser=null;
   setTimeout(()=>{$('np').value='';$('np2').value='';$('lp').value='';go('li');},1500);
 }
 // 確認所有欄位填寫且密碼強度 ≥ 40 分，才啟用「建立帳號」按鈕
 function chk(){const p1=$('rp').value,p2=$('rp2').value;$('rb').disabled=!(val('ru')&&val('re')&&p1&&p2&&p1===p2&&score.A>=40);}
 // 驗證表單並將帳號存入 db（含已綁定的指紋金鑰），成功後自動跳回登入頁
-function reg(){
+async function reg(){
   const u=val('ru'),e=val('re'),p=$('rp').value;
   if(!e.includes('@'))return toast('請輸入有效 Email','err');
   if(db[u])return toast('此帳號已存在','err');
   if(score.A<40)return toast('密碼強度不足','err');
-  db[u]={e,p,tmp:false,fp:regFp};regFp=null;
+  const acc={e,tmp:false,fp:regFp};await setPw(acc,p);
+  db[u]=acc;saveDb();regFp=null;
   $('fgbtn').innerHTML='<i class="ti ti-fingerprint"></i> 綁定指紋（選填）';
   toast('帳號建立成功！','ok');
   setTimeout(()=>{['ru','re','rp','rp2'].forEach(id=>$(id).value='');$('swA').style.display='none';$('mhA').style.display='none';score.A=0;go('li');$('lu').value=u;},1200);
@@ -748,7 +801,7 @@ async function fpLogin(){
   const err=fpSupport(); if(err)return toast(err,'err');
   const u=val('lu');
   const users=Object.entries(db).filter(([k,o])=>o.fp&&(!u||k===u||o.e===u));
-  if(!users.length)return toast(u?'這個帳號沒有綁定指紋':'尚無已綁定指紋的帳號，請先建立帳號並綁定指紋（重新整理頁面會清空資料）','err');
+  if(!users.length)return toast(u?'這個帳號沒有綁定指紋':'尚無已綁定指紋的帳號，請先到「建立帳號」綁定指紋並建立帳號','err');
   const challenge=rand32();
   try{
     toast('請按壓指紋…','info');
